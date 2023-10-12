@@ -1,32 +1,34 @@
-pub mod ecs;
+pub mod entity;
 
 pub mod derive {
-    pub use macros::{BaseSystem, Component};
+    pub use macros::Component;
 }
 
-// use ecs::{
-//     component::{PositionComponent, VelocityComponent},
-//     Registry,
-// };
+pub struct EntityComponentSystem {
+    pub entity_manager: entity::EntityManager,
+    systems: Vec<Box<dyn FnMut(&mut entity::EntityManager)>>,
+}
 
-// fn main() {
-//     let mut entity_manager = Registry::new();
+impl EntityComponentSystem {
+    pub fn new() -> Self {
+        EntityComponentSystem { entity_manager: entity::EntityManager::new(), systems: Vec::new() }
+    }
 
-//     entity_manager
-//         .create_entity()
-//         .add_component(PositionComponent { x: 0.0, y: 0.0 })
-//         .add_component(VelocityComponent { x: 1.0, y: 1.0 })
-//         .entity();
+    pub fn add_system<F: FnMut(&mut entity::EntityManager) + 'static>(&mut self, system: F) {
+        self.systems.push(Box::new(system));
+    }
 
-//     entity_manager
-//         .create_entity()
-//         .add_component(PositionComponent { x: 0.0, y: 0.0 })
-//         .add_component(VelocityComponent { x: 1.0, y: 1.0 })
-//         .entity();
+    pub fn update(&mut self) {
+        self.entity_manager.update();
+        for system in &mut self.systems {
+            println!("Running system... ");
+            system(&mut self.entity_manager);
+        }
+    }
+}
 
-//     let position_components = entity_manager.query_mut::<PositionComponent>();
-//     for position_component in position_components {
-//         position_component.x += 1.0;
-//         println!("Position: {:?}", position_component);
-//     }
-// }
+impl Default for EntityComponentSystem {
+    fn default() -> Self {
+        Self::new()
+    }
+}
