@@ -16,7 +16,7 @@ pub fn component_macro_derive(input: TokenStream) -> TokenStream {
                 // ID for the Component type and declared in ecs/components.rs.
 
                 static TYPE_ID: std::sync::OnceLock<usize> = std::sync::OnceLock::new();
-                TYPE_ID.get_or_init(rust_ecs::entity::get_next_component_type_id);
+                TYPE_ID.get_or_init(rust_ecs::get_next_component_type_id);
                 *TYPE_ID.get().unwrap()
             }
 

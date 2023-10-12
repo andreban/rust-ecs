@@ -1,10 +1,10 @@
-use entity::EntityManager;
-
-pub mod entity;
+mod entity;
 
 pub mod derive {
     pub use macros::Component;
 }
+
+pub use entity::{get_next_component_type_id, Component, Entity, EntityManager, Query};
 
 pub struct EntityComponentSystem {
     pub entity_manager: EntityManager,
@@ -23,7 +23,7 @@ impl EntityComponentSystem {
 
     pub fn update(&mut self) {
         self.entity_manager.update();
-        for system in &mut self.systems {        
+        for system in &mut self.systems {
             system(&self.entity_manager);
         }
     }

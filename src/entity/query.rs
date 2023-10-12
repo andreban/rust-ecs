@@ -1,21 +1,26 @@
-use std::{marker::PhantomData, cell::{Ref, RefMut, RefCell}, collections::HashMap, any::Any};
+use std::{
+    any::Any,
+    cell::{Ref, RefCell, RefMut},
+    collections::HashMap,
+    marker::PhantomData,
+};
 
 use crate::entity::Signature;
 
-use super::{component::Component, EntityManager, EntityId};
+use super::{component::Component, EntityId, EntityManager};
 
 pub struct Query<'a, T> {
     phantom: PhantomData<T>,
     em: &'a EntityManager,
 }
 
-impl <'a, T> Query<'a, T> {
+impl<'a, T> Query<'a, T> {
     pub fn new(em: &'a EntityManager) -> Self {
-        Self { phantom: PhantomData, em  }
+        Self { phantom: PhantomData, em }
     }
 }
 
-impl <'a, A: Component + 'static> Query<'a, Ref<'a, A>> {
+impl<'a, A: Component + 'static> Query<'a, Ref<'a, A>> {
     pub fn values(&'a self) -> Vec<Ref<'a, A>> {
         // Get the component ID.
         let component_id = &A::get_type_id();
@@ -33,26 +38,31 @@ impl <'a, A: Component + 'static> Query<'a, Ref<'a, A>> {
     }
 }
 
-impl <'a, A:Component + 'static> From<&'a EntityManager> for Query<'a, Ref<'a, A>> {
+impl<'a, A: Component + 'static> From<&'a EntityManager> for Query<'a, Ref<'a, A>> {
     fn from(em: &'a EntityManager) -> Self {
         Self::new(em)
     }
 }
 
-impl <'a, A: Component + 'static, B: Component + 'static> Query<'a, (RefMut<'a, A>, Ref<'a, B>)> {
+impl<'a, A: Component + 'static, B: Component + 'static> Query<'a, (RefMut<'a, A>, Ref<'a, B>)> {
     pub fn values(&'a self) -> Vec<(RefMut<'a, A>, Ref<'a, B>)> {
+        // Get the IDs for the Component types.
         let a_id = A::get_type_id();
         let b_id = B::get_type_id();
 
+        // Create a signature for the query, using the IDs for the Component types.
         let mut query_signature = Signature::with_capacity(32);
         query_signature.set(a_id, true);
         query_signature.set(b_id, true);
 
-        let entities = self.em
+        // Filter the entities by the query signature, then map to the component pairs.
+        let entities = self
+            .em
             .entities
             .iter()
             .filter(|e| {
-                let Some(entity_signature) = self.em.entity_component_signatures.get(&e.id()) else {
+                let Some(entity_signature) = self.em.entity_component_signatures.get(&e.id())
+                else {
                     return false;
                 };
                 query_signature.is_subset(entity_signature)
@@ -64,12 +74,15 @@ impl <'a, A: Component + 'static, B: Component + 'static> Query<'a, (RefMut<'a, 
     }
 }
 
-impl <'a, A:Component + 'static, B: Component + 'static> From<&'a EntityManager> for Query<'a, (RefMut<'a, A>, Ref<'a, B>)> {
+impl<'a, A: Component + 'static, B: Component + 'static> From<&'a EntityManager>
+    for Query<'a, (RefMut<'a, A>, Ref<'a, B>)>
+{
     fn from(em: &'a EntityManager) -> Self {
         Self::new(em)
     }
 }
 
+// Builds a component pair from the components HashMap.
 fn get_component<A: Component + 'static, B: Component + 'static>(
     components: &HashMap<usize, HashMap<usize, RefCell<Box<dyn Any>>>>,
     entity_id: EntityId,
@@ -77,9 +90,11 @@ fn get_component<A: Component + 'static, B: Component + 'static>(
     let a_id = A::get_type_id();
     let b_id = B::get_type_id();
 
+    // Get component A from the component storage, then typecast to the correct type.
     let a = components.get(&a_id).unwrap().get(&entity_id).unwrap();
     let a = RefMut::map(a.borrow_mut(), |f| f.downcast_mut::<A>().unwrap());
 
+    // Get component A from the component storage, then typecast to the correct type.
     let b = components.get(&b_id).unwrap().get(&entity_id).unwrap();
     let b = Ref::map(b.borrow(), |f| f.downcast_ref::<B>().unwrap());
     (a, b)

@@ -16,9 +16,10 @@ use fixedbitset::FixedBitSet;
 
 use self::entity::get_next_entity_id;
 
+// The signature of an entity is a bitset that indicates which components the entity has,
+// using the ComponentTypeId.
 pub type Signature = FixedBitSet;
 
-// Component storage
 pub struct EntityManager {
     pub components: HashMap<ComponentTypeId, HashMap<EntityId, RefCell<Box<dyn Any>>>>,
     entities: Vec<Entity>,
@@ -44,7 +45,7 @@ impl EntityManager {
             self.entities.push(entity);
         }
 
-        // TODO: Remove entities waiting to be killed from systems.
+        // TODO: Despawn entities waiting to be killed from systems.
     }
 
     pub fn create_entity(&mut self) -> EntityBuilder {
