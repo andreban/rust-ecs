@@ -20,7 +20,7 @@ pub type Signature = FixedBitSet;
 
 // Component storage
 pub struct EntityManager {
-    components: HashMap<ComponentTypeId, HashMap<EntityId, RefCell<Box<dyn Any>>>>,
+    pub components: HashMap<ComponentTypeId, HashMap<EntityId, RefCell<Box<dyn Any>>>>,
     entities: Vec<Entity>,
     entities_to_spawn: HashSet<Entity>,
     _entities_to_despawn: HashSet<Entity>,

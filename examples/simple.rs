@@ -39,7 +39,6 @@ fn main() {
         .create_entity()
         .add_component(TransformComponent(Vec2::new(100.0, 100.0)))
         .add_component(RigidBodyComponent(Vec2::ONE))
-        .entity();
-
+        .entity();    
     ecs.update();
 }
