@@ -1,3 +1,5 @@
+use entity::EntityManager;
+
 pub mod entity;
 
 pub mod derive {
@@ -5,8 +7,8 @@ pub mod derive {
 }
 
 pub struct EntityComponentSystem {
-    pub entity_manager: entity::EntityManager,
-    systems: Vec<Box<dyn FnMut(&mut entity::EntityManager)>>,
+    pub entity_manager: EntityManager,
+    pub systems: Vec<Box<dyn Fn(&EntityManager)>>,
 }
 
 impl EntityComponentSystem {
@@ -14,15 +16,15 @@ impl EntityComponentSystem {
         EntityComponentSystem { entity_manager: entity::EntityManager::new(), systems: Vec::new() }
     }
 
-    pub fn add_system<F: FnMut(&mut entity::EntityManager) + 'static>(&mut self, system: F) {
-        self.systems.push(Box::new(system));
+    pub fn add_system<T: Fn(&EntityManager) + 'static>(&mut self, system: T) {
+        let boxed = Box::new(system);
+        self.systems.push(boxed);
     }
 
     pub fn update(&mut self) {
         self.entity_manager.update();
-        for system in &mut self.systems {
-            println!("Running system... ");
-            system(&mut self.entity_manager);
+        for system in &mut self.systems {        
+            system(&self.entity_manager);
         }
     }
 }
