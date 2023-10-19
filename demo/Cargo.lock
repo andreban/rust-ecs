@@ -301,6 +301,7 @@ version = "0.1.0"
 dependencies = [
  "fixedbitset",
  "glam 0.24.2",
+ "macroquad",
  "macros",
 ]
 
@@ -308,7 +309,6 @@ dependencies = [
 name = "rust-ecs-demo"
 version = "0.1.0"
 dependencies = [
- "glam 0.24.2",
  "macroquad",
  "rust-ecs",
 ]

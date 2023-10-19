@@ -74,8 +74,66 @@ impl<'a, A: Component + 'static, B: Component + 'static> Query<'a, (RefMut<'a, A
     }
 }
 
+impl<'a, A: Component + 'static, B: Component + 'static> Query<'a, (Ref<'a, A>, Ref<'a, B>)> {
+    pub fn values(&'a self) -> Vec<(Ref<'a, A>, Ref<'a, B>)> {
+        // Get the IDs for the Component types.
+        let a_id = A::get_type_id();
+        let b_id = B::get_type_id();
+
+        // Create a signature for the query, using the IDs for the Component types.
+        let mut query_signature = Signature::with_capacity(32);
+        query_signature.set(a_id, true);
+        query_signature.set(b_id, true);
+
+        // Filter the entities by the query signature, then map to the component pairs.
+        let entities = self
+            .em
+            .entities
+            .iter()
+            .filter(|e| {
+                let Some(entity_signature) = self.em.entity_component_signatures.get(&e.id())
+                else {
+                    return false;
+                };
+                query_signature.is_subset(entity_signature)
+            })
+            .map(|entity| {
+                let a = self
+                    .em
+                    .components
+                    .get(&a_id)
+                    .unwrap()
+                    .get(&entity.id())
+                    .unwrap();
+                let a = Ref::map(a.borrow(), |f| f.downcast_ref::<A>().unwrap());
+
+                // Get component A from the component storage, then typecast to the correct type.
+                let b = self
+                    .em
+                    .components
+                    .get(&b_id)
+                    .unwrap()
+                    .get(&entity.id())
+                    .unwrap();
+                let b = Ref::map(b.borrow(), |f| f.downcast_ref::<B>().unwrap());
+                (a, b)
+            })
+            .collect::<Vec<_>>();
+
+        entities
+    }
+}
+
 impl<'a, A: Component + 'static, B: Component + 'static> From<&'a EntityManager>
     for Query<'a, (RefMut<'a, A>, Ref<'a, B>)>
+{
+    fn from(em: &'a EntityManager) -> Self {
+        Self::new(em)
+    }
+}
+
+impl<'a, A: Component + 'static, B: Component + 'static> From<&'a EntityManager>
+    for Query<'a, (Ref<'a, A>, Ref<'a, B>)>
 {
     fn from(em: &'a EntityManager) -> Self {
         Self::new(em)
