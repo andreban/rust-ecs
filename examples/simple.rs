@@ -2,6 +2,7 @@ use std::cell::{Ref, RefMut};
 
 use glam::Vec2;
 use rust_ecs::{Component, EntityComponentSystem, Query};
+use std::time::Duration;
 
 // A transform component, with the entity position.
 #[derive(rust_ecs::derive::Component, Debug)]
@@ -30,11 +31,11 @@ fn main() {
     let mut ecs = EntityComponentSystem::new();
 
     // Combining Component queries with system functions, we can add systems like this:
-    ecs.add_system(|em| movement_system(em.into()));
-    ecs.add_system(|em| render_system(em.into()));
+    ecs.add_system(|_, _, em, _| movement_system(em.into()));
+    ecs.add_system(|_, _, em, _| render_system(em.into()));
 
     // Or manually create a system function:
-    ecs.add_system(|_| println!("Hello world!"));
+    ecs.add_system(|_, _, em, _| println!("Hello world!"));
 
     // Create entities with components.
     ecs.entity_manager
@@ -49,5 +50,5 @@ fn main() {
         .entity();
 
     // Update the ECS - will run all systems (usually in a loop, but calling once as an example)
-    ecs.update();
+    ecs.update(Duration::from_secs_f32(1.0));
 }
