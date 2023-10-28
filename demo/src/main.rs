@@ -1,45 +1,24 @@
 mod components;
+mod systems;
 
-use std::{
-    cell::{Ref, RefMut},
-    time::Instant,
-};
+use std::time::Instant;
 
 use components::{SpriteComponent, TransformComponent, VelocityComponent};
 use macroquad::prelude::*;
 
-use rust_ecs::{AssetManager, EntityComponentSystem, Query};
+use rust_ecs::EntityComponentSystem;
+use systems::{collision_system, debug_system, movement_system, render_system};
 
-// The movement system uses a mutable TransformComponent and an immutable VelocityComponent,
-// updating the entity position.
-fn movement_system(
-    delta_time: f32,
-    query: Query<(RefMut<TransformComponent>, Ref<VelocityComponent>)>,
-) {
-    for (mut transform, velocity) in query.values() {
-        transform.0 += velocity.0 * delta_time;
-    }
-}
-
-// The render system prints the player position to the console.
-fn render_system(
-    asset_manager: &AssetManager,
-    query: Query<(Ref<TransformComponent>, Ref<SpriteComponent>)>,
-) {
-    for (transform, sprite) in query.values() {
-        let texture = asset_manager.get_texture(&sprite.sprite_name).unwrap();
-        draw_texture(texture, transform.0.x, transform.0.y, WHITE);
-    }
+struct CollisionEvent {
+    pub entity_a: u32,
+    pub entity_b: u32,
 }
 
 fn window_conf() -> Conf {
     Conf { window_title: "Demo".to_string(), ..Default::default() }
 }
 
-#[macroquad::main(window_conf)]
-async fn main() {
-    let mut ecs = EntityComponentSystem::new();
-
+pub async fn setup(ecs: &mut EntityComponentSystem) {
     // Load assets.
     ecs.asset_manager
         .load_texture("tank", "assets/images/tank-panther-right.png")
@@ -52,8 +31,10 @@ async fn main() {
         .unwrap();
 
     // Combining Component queries with system functions, we can add systems like this:
-    ecs.add_system(|delta_time, _, em| movement_system(delta_time, em.into()));
-    ecs.add_system(|_, am, em| render_system(am, em.into()));
+    ecs.add_system(|delta_time, _, em, _| movement_system(delta_time, em.into()));
+    ecs.add_system(|_, am, em, _| render_system(am, em.into()));
+    ecs.add_system(|_, _, em, eb| collision_system(eb, em.into()));
+    ecs.add_system(|_, _, _, eb| debug_system(eb));
 
     // Create entities with components.
     ecs.entity_manager
@@ -67,11 +48,22 @@ async fn main() {
         .add_component(TransformComponent(Vec2::new(100.0, 100.0)))
         .add_component(VelocityComponent(Vec2::new(0.0, 50.0)))
         .add_component(SpriteComponent::new("truck".to_string(), 32, 32));
+}
+
+#[macroquad::main(window_conf)]
+async fn main() {
+    let mut ecs = EntityComponentSystem::new();
+
+    setup(&mut ecs).await;
 
     let mut time = Instant::now();
     loop {
         clear_background(BLACK);
-        ecs.update(time.elapsed().as_secs_f32());
+
+        ecs.event_bus
+            .emit(CollisionEvent { entity_a: 0, entity_b: 1 });
+
+        ecs.update(time.elapsed());
         time = Instant::now();
         next_frame().await
     }
