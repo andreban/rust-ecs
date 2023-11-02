@@ -54,16 +54,12 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
         let tile_src_y = (tile.sprite_id / 10 * 32) as f32;
         let tile_src_x = (tile.sprite_id % 10 * 32) as f32;
 
-        println!(
-            "Tile: x: {}, y: {}, {}, {}",
-            tile_x, tile_y, tile_src_x, tile_src_y
-        );
         ecs.entity_manager
             .create_entity()
             .add_component(TransformComponent(Vec2::new(tile_x, tile_y)))
             .add_component(SpriteComponent::new(
                 "jungle".to_string(),
-                Some(Rect::new(tile_src_x, tile_src_y, 32.0, 32.0)),
+                Some(Rect::new(tile_src_x + 0.5, tile_src_y + 0.5, 31.0, 31.0)),
                 Vec2::new(32.0 * tile_scale as f32, 32.0 * tile_scale as f32),
                 0,
             ));
