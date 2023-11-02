@@ -21,10 +21,11 @@ use self::entity::get_next_entity_id;
 pub type Signature = FixedBitSet;
 
 pub struct EntityManager {
-    pub components: HashMap<ComponentTypeId, HashMap<EntityId, RefCell<Box<dyn Any>>>>,
+    components: HashMap<ComponentTypeId, HashMap<EntityId, RefCell<Box<dyn Any>>>>,
+    // TODO: use a Map<EntityId, Entity> instead, to improve removal performance.
     entities: Vec<Entity>,
     entities_to_spawn: HashSet<Entity>,
-    _entities_to_despawn: HashSet<Entity>,
+    entities_to_despawn: HashSet<Entity>,
     entity_component_signatures: HashMap<EntityId, Signature>,
 }
 
@@ -34,7 +35,7 @@ impl EntityManager {
             components: HashMap::new(),
             entities: Vec::new(),
             entities_to_spawn: HashSet::new(),
-            _entities_to_despawn: HashSet::new(),
+            entities_to_despawn: HashSet::new(),
             entity_component_signatures: HashMap::new(),
         }
     }
@@ -45,7 +46,21 @@ impl EntityManager {
             self.entities.push(entity);
         }
 
-        // TODO: Despawn entities waiting to be killed from systems.
+        // Despawn entities waiting to be killed from systems.
+        for entity in &mut self.entities_to_despawn.drain() {
+            // Remove the components...
+            for v in &mut self.components.values_mut() {
+                v.remove(&entity.id());
+            }
+
+            // Remove entity.
+            let pos = self
+                .entities
+                .iter()
+                .position(|e| e.id() == entity.id())
+                .unwrap();
+            self.entities.remove(pos);
+        }
     }
 
     pub fn create_entity(&mut self) -> EntityBuilder {
@@ -81,26 +96,20 @@ impl EntityManager {
             .insert(entity.id(), component);
     }
 
-    pub fn get_component<C: Component + 'static>(&self, entity: Entity) -> Option<&C> {
+    pub fn get_component<C: Component + 'static>(&self, entity: Entity) -> Option<Ref<C>> {
         let component_type_id = C::get_type_id();
+        let entity_id = entity.id();
         let components = self.components.get(&component_type_id)?;
-        components
-            .get(&entity.id())
-            .map(|c| (c as &dyn Any).downcast_ref::<C>().unwrap())
-    }
-
-    pub fn get_component_2<C: Component + 'static>(&self, id: EntityId) -> Option<Ref<C>> {
-        let component_type_id = C::get_type_id();
-        let components = self.components.get(&component_type_id)?;
-        let component = components.get(&id)?;
+        let component = components.get(&entity_id)?;
         let component = Ref::map(component.borrow(), |f| f.downcast_ref::<C>().unwrap());
         Some(component)
     }
 
-    pub fn get_component_mut<C: Component + 'static>(&self, id: EntityId) -> Option<RefMut<C>> {
+    pub fn get_component_mut<C: Component + 'static>(&self, entity: Entity) -> Option<RefMut<C>> {
         let component_type_id = C::get_type_id();
+        let entity_id = entity.id();
         let components = self.components.get(&component_type_id)?;
-        let component = components.get(&id)?;
+        let component = components.get(&entity_id)?;
         let component = RefMut::map(component.borrow_mut(), |f| f.downcast_mut::<C>().unwrap());
         Some(component)
     }
@@ -136,6 +145,20 @@ impl EntityManager {
         components
             .iter()
             .map(|(_, c)| (c as &dyn Any).downcast_ref::<RefCell<C>>().unwrap())
+            .collect()
+    }
+
+    pub fn get_entities_with_signature(&self, signature: &Signature) -> Vec<Entity> {
+        self.entities
+            .iter()
+            .filter(|e| {
+                if let Some(s) = self.entity_component_signatures.get(&e.id()) {
+                    signature.is_subset(s)
+                } else {
+                    false
+                }
+            })
+            .cloned()
             .collect()
     }
 }

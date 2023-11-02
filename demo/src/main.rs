@@ -1,17 +1,19 @@
 mod components;
 mod systems;
 
-use std::time::Instant;
+use std::{
+    thread,
+    time::{Duration, Instant},
+};
 
 use components::{SpriteComponent, TransformComponent, VelocityComponent};
 use macroquad::prelude::*;
 
-use rust_ecs::EntityComponentSystem;
-use systems::{collision_system, debug_system, movement_system, render_system};
+use rust_ecs::{Entity, EntityComponentSystem};
 
 struct CollisionEvent {
-    pub entity_a: u32,
-    pub entity_b: u32,
+    pub entity_a: Entity,
+    pub entity_b: Entity,
 }
 
 fn window_conf() -> Conf {
@@ -31,10 +33,10 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
         .unwrap();
 
     // Combining Component queries with system functions, we can add systems like this:
-    ecs.add_system(|delta_time, _, em, _| movement_system(delta_time, em.into()));
-    ecs.add_system(|_, am, em, _| render_system(am, em.into()));
-    ecs.add_system(|_, _, em, eb| collision_system(eb, em.into()));
-    ecs.add_system(|_, _, _, eb| debug_system(eb));
+    ecs.add_system(systems::render_system());
+    ecs.add_system(systems::collision_system());
+    ecs.add_system(systems::movement_system());
+    ecs.add_system(systems::debug_system());
 
     // Create entities with components.
     ecs.entity_manager
@@ -45,24 +47,28 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
 
     ecs.entity_manager
         .create_entity()
-        .add_component(TransformComponent(Vec2::new(100.0, 100.0)))
-        .add_component(VelocityComponent(Vec2::new(0.0, 50.0)))
+        .add_component(TransformComponent(Vec2::new(100.0, 0.0)))
+        .add_component(VelocityComponent(Vec2::new(-50.0, 0.0)))
         .add_component(SpriteComponent::new("truck".to_string(), 32, 32));
 }
 
 #[macroquad::main(window_conf)]
 async fn main() {
     let mut ecs = EntityComponentSystem::new();
+    let rate = 1000 / 60;
 
     setup(&mut ecs).await;
 
     let mut time = Instant::now();
     loop {
+        if time.elapsed().as_millis() < rate {
+            thread::sleep(Duration::from_millis(
+                (rate - time.elapsed().as_millis()) as u64,
+            ));
+            continue;
+        }
+
         clear_background(BLACK);
-
-        ecs.event_bus
-            .emit(CollisionEvent { entity_a: 0, entity_b: 1 });
-
         ecs.update(time.elapsed());
         time = Instant::now();
         next_frame().await

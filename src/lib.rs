@@ -1,6 +1,7 @@
 mod asset_manager;
 mod entity;
 pub mod events;
+pub mod systems;
 
 pub mod derive {
     pub use macros::Component;
@@ -14,7 +15,7 @@ use events::EventBus;
 
 pub struct EntityComponentSystem {
     pub entity_manager: EntityManager,
-    pub systems: Vec<Box<dyn Fn(Duration, &AssetManager, &EntityManager, &mut EventBus)>>,
+    pub systems: Vec<systems::System>,
     pub asset_manager: AssetManager,
     pub event_bus: EventBus,
 }
@@ -29,24 +30,28 @@ impl EntityComponentSystem {
         }
     }
 
-    pub fn add_system<T: Fn(Duration, &AssetManager, &EntityManager, &mut EventBus) + 'static>(
-        &mut self,
-        system: T,
-    ) {
-        let boxed = Box::new(system);
-        self.systems.push(boxed);
+    pub fn add_system(&mut self, system: systems::System) {
+        self.systems.push(system);
     }
 
     pub fn update(&mut self, delta_time: Duration) {
         self.entity_manager.update();
+        self.event_bus.clear();
+
         for system in &mut self.systems {
-            system(
+            system.setup_listeners(&mut self.event_bus);
+        }
+
+        for system in &mut self.systems {
+            system.update(
                 delta_time,
                 &self.asset_manager,
                 &self.entity_manager,
                 &mut self.event_bus,
             );
         }
+
+        self.event_bus.clear();
     }
 }
 

@@ -29,4 +29,8 @@ impl EventBus {
             }
         }
     }
+
+    pub fn clear(&mut self) {
+        self.listeners.clear();
+    }
 }
