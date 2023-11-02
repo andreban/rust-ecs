@@ -1,4 +1,7 @@
-use macroquad::{prelude::WHITE, texture::draw_texture};
+use macroquad::{
+    prelude::WHITE,
+    texture::{draw_texture_ex, DrawTextureParams},
+};
 use rust_ecs::systems::{System, SystemBuilder};
 
 use crate::{
@@ -28,11 +31,31 @@ pub fn render_system() -> System {
         .require_component::<TransformComponent>()
         .require_component::<SpriteComponent>()
         .with_update(|entities, _, am, em, _| {
-            for entity in entities {
-                let transform = em.get_component::<TransformComponent>(*entity).unwrap();
-                let sprite = em.get_component::<SpriteComponent>(*entity).unwrap();
+            let mut entities = entities
+                .iter()
+                .map(|entity| {
+                    let transform = em.get_component::<TransformComponent>(*entity).unwrap();
+                    let sprite = em.get_component::<SpriteComponent>(*entity).unwrap();
+                    (transform, sprite)
+                })
+                .collect::<Vec<_>>();
+
+            entities.sort_by_key(|(_, sprite)| sprite.z_index);
+
+            for (transform, sprite) in entities {
                 let texture = am.get_texture(&sprite.sprite_name).unwrap();
-                draw_texture(texture, transform.0.x, transform.0.y, WHITE);
+
+                draw_texture_ex(
+                    texture,
+                    transform.0.x,
+                    transform.0.y,
+                    WHITE,
+                    DrawTextureParams {
+                        dest_size: Some(sprite.dst_size),
+                        source: sprite.src_rect,
+                        ..Default::default()
+                    },
+                );
             }
         })
         .build()
@@ -42,6 +65,7 @@ pub fn render_system() -> System {
 pub fn collision_system() -> System {
     SystemBuilder::new()
         .require_component::<TransformComponent>()
+        .require_component::<VelocityComponent>()
         .require_component::<SpriteComponent>()
         .with_update(|entities, _, _, em, event_bus| {
             let entities = entities.to_vec();
@@ -57,10 +81,10 @@ pub fn collision_system() -> System {
 
                         let a = transform_a.0;
                         let b = transform_b.0;
-                        let a_width = sprite_a.width as f32;
-                        let a_height = sprite_a.height as f32;
-                        let b_width = sprite_b.width as f32;
-                        let b_height = sprite_b.height as f32;
+                        let a_width = sprite_a.dst_size.x as f32;
+                        let a_height = sprite_a.dst_size.y as f32;
+                        let b_width = sprite_b.dst_size.x as f32;
+                        let b_height = sprite_b.dst_size.y as f32;
 
                         a.x < b.x + b_width
                             && a.x + a_width > b.x

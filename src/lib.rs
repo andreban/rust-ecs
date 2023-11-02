@@ -46,7 +46,7 @@ impl EntityComponentSystem {
             system.update(
                 delta_time,
                 &self.asset_manager,
-                &self.entity_manager,
+                &mut self.entity_manager,
                 &mut self.event_bus,
             );
         }

@@ -22,8 +22,7 @@ pub type Signature = FixedBitSet;
 
 pub struct EntityManager {
     components: HashMap<ComponentTypeId, HashMap<EntityId, RefCell<Box<dyn Any>>>>,
-    // TODO: use a Map<EntityId, Entity> instead, to improve removal performance.
-    entities: Vec<Entity>,
+    entities: HashMap<EntityId, Entity>,
     entities_to_spawn: HashSet<Entity>,
     entities_to_despawn: HashSet<Entity>,
     entity_component_signatures: HashMap<EntityId, Signature>,
@@ -33,7 +32,7 @@ impl EntityManager {
     pub fn new() -> Self {
         EntityManager {
             components: HashMap::new(),
-            entities: Vec::new(),
+            entities: HashMap::new(),
             entities_to_spawn: HashSet::new(),
             entities_to_despawn: HashSet::new(),
             entity_component_signatures: HashMap::new(),
@@ -43,26 +42,25 @@ impl EntityManager {
     pub fn update(&mut self) {
         // Add entities waiting to be created to systems.
         for entity in &mut self.entities_to_spawn.drain() {
-            self.entities.push(entity);
+            self.entities.insert(entity.id(), entity);
         }
 
         // Despawn entities waiting to be killed from systems.
         for entity in &mut self.entities_to_despawn.drain() {
+            // Remove Signature.
+            self.entity_component_signatures.remove(&entity.id());
+
             // Remove the components...
             for v in &mut self.components.values_mut() {
                 v.remove(&entity.id());
             }
 
             // Remove entity.
-            let pos = self
-                .entities
-                .iter()
-                .position(|e| e.id() == entity.id())
-                .unwrap();
-            self.entities.remove(pos);
+            self.entities.remove(&entity.id());
         }
     }
 
+    /// Creates a new entity and enqueues it to be added in the next update.
     pub fn create_entity(&mut self) -> EntityBuilder {
         let id: EntityId = get_next_entity_id();
         let entity = Entity::new(id);
@@ -70,15 +68,18 @@ impl EntityManager {
         EntityBuilder { entity, entity_manager: self }
     }
 
+    /// Returns an `EntityBuilder` to add/remove components from the entity.
     pub fn edit_entity(&mut self, id: EntityId) -> EntityBuilder {
         EntityBuilder { entity: Entity::new(id), entity_manager: self }
     }
 
+    /// Enqueues an entity to be destroyed in the next update.
     pub fn destroy_entity(&mut self, entity: Entity) {
-        // TODO: Remove components...
-        self.entities.retain(|e| *e != entity);
+        // Remove components...
+        self.entities_to_despawn.insert(entity);
     }
 
+    /// Adds the Component `C` to the entity.
     pub fn add_component<C: Component + 'static>(&mut self, entity: Entity, component: C) {
         let component_type_id = C::get_type_id();
         let component = RefCell::new(Box::new(component));
@@ -96,6 +97,7 @@ impl EntityManager {
             .insert(entity.id(), component);
     }
 
+    /// Retrieves the component of type `C` from the entity, if available.
     pub fn get_component<C: Component + 'static>(&self, entity: Entity) -> Option<Ref<C>> {
         let component_type_id = C::get_type_id();
         let entity_id = entity.id();
@@ -105,6 +107,7 @@ impl EntityManager {
         Some(component)
     }
 
+    /// Retrieves the component of type `C` from the entity, if available.
     pub fn get_component_mut<C: Component + 'static>(&self, entity: Entity) -> Option<RefMut<C>> {
         let component_type_id = C::get_type_id();
         let entity_id = entity.id();
@@ -114,6 +117,7 @@ impl EntityManager {
         Some(component)
     }
 
+    /// Removes the Component `C` from the entity.
     pub fn remove_component<C: Component + 'static>(&mut self, entity: Entity) {
         let component_type_id = C::get_type_id();
         if let Some(component) = self.components.get_mut(&component_type_id) {
@@ -150,7 +154,7 @@ impl EntityManager {
 
     pub fn get_entities_with_signature(&self, signature: &Signature) -> Vec<Entity> {
         self.entities
-            .iter()
+            .values()
             .filter(|e| {
                 if let Some(s) = self.entity_component_signatures.get(&e.id()) {
                     signature.is_subset(s)

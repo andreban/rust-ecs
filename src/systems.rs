@@ -5,7 +5,7 @@ use crate::{entity::Signature, events::EventBus, AssetManager, Component, Entity
 pub struct SystemBuilder {
     signature: Signature,
     update_func:
-        Option<Box<dyn Fn(&[Entity], Duration, &AssetManager, &EntityManager, &mut EventBus)>>,
+        Option<Box<dyn Fn(&[Entity], Duration, &AssetManager, &mut EntityManager, &mut EventBus)>>,
     setup_listeners_func: Option<Box<dyn Fn(&mut EventBus)>>,
 }
 
@@ -20,7 +20,7 @@ impl SystemBuilder {
 
     pub fn with_update(
         mut self,
-        func: impl Fn(&[Entity], Duration, &AssetManager, &EntityManager, &mut EventBus) + 'static,
+        func: impl Fn(&[Entity], Duration, &AssetManager, &mut EntityManager, &mut EventBus) + 'static,
     ) -> Self {
         self.update_func = Some(Box::new(func));
         self
@@ -49,7 +49,7 @@ impl SystemBuilder {
 pub struct System {
     pub signature: Signature,
     pub update_func:
-        Option<Box<dyn Fn(&[Entity], Duration, &AssetManager, &EntityManager, &mut EventBus)>>,
+        Option<Box<dyn Fn(&[Entity], Duration, &AssetManager, &mut EntityManager, &mut EventBus)>>,
     pub setup_listeners_func: Option<Box<dyn Fn(&mut EventBus)>>,
     pub entities: Vec<Entity>,
 }
@@ -65,7 +65,7 @@ impl System {
         &mut self,
         delta_time: Duration,
         asset_manager: &AssetManager,
-        entity_manager: &EntityManager,
+        entity_manager: &mut EntityManager,
         event_bus: &mut EventBus,
     ) {
         if let Some(func) = &self.update_func {

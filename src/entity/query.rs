@@ -59,7 +59,7 @@ impl<'a, A: Component + 'static, B: Component + 'static> Query<'a, (RefMut<'a, A
         let entities = self
             .em
             .entities
-            .iter()
+            .values()
             .filter(|e| {
                 let Some(entity_signature) = self.em.entity_component_signatures.get(&e.id())
                 else {
@@ -89,7 +89,7 @@ impl<'a, A: Component + 'static, B: Component + 'static> Query<'a, (Ref<'a, A>, 
         let entities = self
             .em
             .entities
-            .iter()
+            .values()
             .filter(|e| {
                 let Some(entity_signature) = self.em.entity_component_signatures.get(&e.id())
                 else {

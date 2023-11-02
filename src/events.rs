@@ -3,7 +3,9 @@ use std::{
     collections::HashMap,
 };
 
-type EventHandler = Box<dyn FnMut(&Box<dyn Any>)>;
+use crate::EntityManager;
+
+type EventHandler = Box<dyn FnMut(&mut EntityManager, &Box<dyn Any>)>;
 
 #[derive(Default)]
 pub struct EventBus {
@@ -11,21 +13,24 @@ pub struct EventBus {
 }
 
 impl EventBus {
-    pub fn add_listener<T: 'static>(&mut self, mut listener: impl FnMut(&T) + 'static) {
+    pub fn add_listener<T: 'static>(
+        &mut self,
+        mut listener: impl FnMut(&mut EntityManager, &T) + 'static,
+    ) {
         let type_id = std::any::TypeId::of::<T>();
         let listeners = self.listeners.entry(type_id).or_default();
-        listeners.push(Box::new(move |e| {
+        listeners.push(Box::new(move |em, e| {
             let data = e.downcast_ref::<T>().unwrap();
-            listener(data);
+            listener(em, data);
         }));
     }
 
-    pub fn emit<T: 'static>(&mut self, event: T) {
+    pub fn emit<T: 'static>(&mut self, em: &mut EntityManager, event: T) {
         let type_id = std::any::TypeId::of::<T>();
         if let Some(listeners) = self.listeners.get_mut(&type_id) {
             let wrapped = Box::new(event) as Box<dyn Any + 'static>;
             for listener in listeners {
-                listener(&wrapped);
+                listener(em, &wrapped);
             }
         }
     }
