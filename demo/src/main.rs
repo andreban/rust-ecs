@@ -36,7 +36,7 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
     ecs.add_system(systems::render_system());
     ecs.add_system(systems::collision_system());
     ecs.add_system(systems::movement_system());
-    ecs.add_system(systems::debug_system());
+    ecs.add_system(systems::damage_system());
 
     // Create entities with components.
     ecs.entity_manager

@@ -46,25 +46,36 @@ pub fn collision_system() -> System {
         .with_update(|entities, _, _, em, event_bus| {
             let entities = entities.to_vec();
             for (i, entity_a) in entities.iter().enumerate() {
-                let transform_a = em.get_component::<TransformComponent>(*entity_a).unwrap();
-                let sprite_a = em.get_component::<SpriteComponent>(*entity_a).unwrap();
                 for entity_b in &entities[i + 1..] {
-                    let transform_b = em.get_component::<TransformComponent>(*entity_b).unwrap();
-                    let sprite_b = em.get_component::<SpriteComponent>(*entity_b).unwrap();
+                    let collided = {
+                        let transform_a =
+                            em.get_component::<TransformComponent>(*entity_a).unwrap();
+                        let sprite_a = em.get_component::<SpriteComponent>(*entity_a).unwrap();
+                        let transform_b =
+                            em.get_component::<TransformComponent>(*entity_b).unwrap();
+                        let sprite_b = em.get_component::<SpriteComponent>(*entity_b).unwrap();
 
-                    let a = transform_a.0;
-                    let b = transform_b.0;
-                    let a_width = sprite_a.width as f32;
-                    let a_height = sprite_a.height as f32;
-                    let b_width = sprite_b.width as f32;
-                    let b_height = sprite_b.height as f32;
+                        let a = transform_a.0;
+                        let b = transform_b.0;
+                        let a_width = sprite_a.width as f32;
+                        let a_height = sprite_a.height as f32;
+                        let b_width = sprite_b.width as f32;
+                        let b_height = sprite_b.height as f32;
 
-                    if a.x < b.x + b_width
-                        && a.x + a_width > b.x
-                        && a.y < b.y + b_height
-                        && a.y + a_height > b.y
-                    {
-                        event_bus.emit(CollisionEvent { entity_a: *entity_a, entity_b: *entity_b });
+                        a.x < b.x + b_width
+                            && a.x + a_width > b.x
+                            && a.y < b.y + b_height
+                            && a.y + a_height > b.y
+                    };
+
+                    if collided {
+                        event_bus.emit(
+                            em,
+                            CollisionEvent {
+                                entity_a: entity_a.clone(),
+                                entity_b: entity_b.clone(),
+                            },
+                        );
                     }
                 }
             }
@@ -72,14 +83,16 @@ pub fn collision_system() -> System {
         .build()
 }
 
-pub fn debug_system() -> System {
+pub fn damage_system() -> System {
     SystemBuilder::new()
         .with_setup_listeners(|event_bus| {
-            event_bus.add_listener(|event: &CollisionEvent| {
+            event_bus.add_listener(|em, event: &CollisionEvent| {
                 println!(
                     "Collision between entities {:?} and {:?}",
                     event.entity_a, event.entity_b
                 );
+                em.destroy_entity(event.entity_a);
+                em.destroy_entity(event.entity_b);
             });
         })
         .build()
