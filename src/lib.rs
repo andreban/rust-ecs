@@ -50,8 +50,6 @@ impl EntityComponentSystem {
                 &mut self.event_bus,
             );
         }
-
-        self.event_bus.clear();
     }
 }
 

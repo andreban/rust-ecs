@@ -8,7 +8,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use components::{SpriteComponent, TransformComponent, VelocityComponent};
+use components::{
+    KeyboardControlComponent, SpriteComponent, TransformComponent, VelocityComponent,
+};
+use events::KeyboardEvent;
 use macroquad::prelude::*;
 
 use rust_ecs::EntityComponentSystem;
@@ -35,11 +38,17 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
         .await
         .unwrap();
 
+    ecs.asset_manager
+        .load_texture("chopper", "assets/images/chopper-spritesheet.png")
+        .await
+        .unwrap();
+
     // Combining Component queries with system functions, we can add systems like this:
     ecs.add_system(systems::create_render_system());
     ecs.add_system(systems::create_collision_system());
     ecs.add_system(systems::create_movement_system());
     ecs.add_system(systems::create_damage_system());
+    ecs.add_system(systems::create_keyboard_movement_system());
 
     let tiles = load_map("assets/tilemaps/jungle.map").unwrap();
     let tile_scale = 2;
@@ -83,6 +92,39 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
         .add_component(
             SpriteComponent::new("truck".to_string(), Vec2::new(32.0, 32.0)).with_z_index(1),
         );
+
+    ecs.entity_manager
+        .create_entity()
+        .add_component(TransformComponent(Vec2::new(0.0, 100.0)))
+        .add_component(VelocityComponent(Vec2::new(0.0, 0.0)))
+        .add_component(KeyboardControlComponent(100.0))
+        .add_component(
+            SpriteComponent::new("chopper".to_string(), Vec2::new(32.0, 32.0))
+                .with_z_index(1)
+                .with_src_rect(Rect::new(0.0, 0.0, 32.0, 32.0)),
+        );
+}
+
+fn handle_keyboard_events(ecs: &mut EntityComponentSystem) {
+    if is_key_pressed(KeyCode::Up) {
+        ecs.event_bus
+            .emit(&mut ecs.entity_manager, KeyboardEvent(KeyCode::Up));
+    }
+
+    if is_key_pressed(KeyCode::Right) {
+        ecs.event_bus
+            .emit(&mut ecs.entity_manager, KeyboardEvent(KeyCode::Right));
+    }
+
+    if is_key_pressed(KeyCode::Down) {
+        ecs.event_bus
+            .emit(&mut ecs.entity_manager, KeyboardEvent(KeyCode::Down));
+    }
+
+    if is_key_pressed(KeyCode::Left) {
+        ecs.event_bus
+            .emit(&mut ecs.entity_manager, KeyboardEvent(KeyCode::Left));
+    }
 }
 
 #[macroquad::main(window_conf)]
@@ -100,6 +142,8 @@ async fn main() {
             ));
             continue;
         }
+
+        handle_keyboard_events(&mut ecs);
 
         clear_background(BLACK);
         ecs.update(time.elapsed());

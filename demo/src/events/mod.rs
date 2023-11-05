@@ -1,6 +1,5 @@
-use rust_ecs::Entity;
+mod collision_event;
+mod keyboard_event;
 
-pub struct CollisionEvent {
-    pub entity_a: Entity,
-    pub entity_b: Entity,
-}
+pub use collision_event::CollisionEvent;
+pub use keyboard_event::KeyboardEvent;

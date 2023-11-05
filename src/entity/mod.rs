@@ -165,6 +165,10 @@ impl EntityManager {
             .cloned()
             .collect()
     }
+
+    pub fn create_query<T>(&self) -> Query<T> {
+        Query::new(self)
+    }
 }
 
 impl Default for EntityManager {
