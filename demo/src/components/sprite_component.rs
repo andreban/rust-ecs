@@ -10,7 +10,17 @@ pub struct SpriteComponent {
 }
 
 impl SpriteComponent {
-    pub fn new(sprite_name: String, src_rect: Option<Rect>, dst_size: Vec2, z_index: i32) -> Self {
-        Self { sprite_name, src_rect, dst_size, z_index }
+    pub fn new(sprite_name: String, dst_size: Vec2) -> Self {
+        Self { sprite_name, src_rect: None, dst_size, z_index: 0 }
+    }
+
+    pub fn with_src_rect(mut self, src_rect: Rect) -> Self {
+        self.src_rect = Some(src_rect);
+        self
+    }
+
+    pub fn with_z_index(mut self, z_index: i32) -> Self {
+        self.z_index = z_index;
+        self
     }
 }

@@ -53,12 +53,18 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
         ecs.entity_manager
             .create_entity()
             .add_component(TransformComponent(Vec2::new(tile_x, tile_y)))
-            .add_component(SpriteComponent::new(
-                "jungle".to_string(),
-                Some(Rect::new(tile_src_x + 0.5, tile_src_y + 0.5, 31.0, 31.0)),
-                Vec2::new(32.0 * tile_scale as f32, 32.0 * tile_scale as f32),
-                0,
-            ));
+            .add_component(
+                SpriteComponent::new(
+                    "jungle".to_string(),
+                    Vec2::new(32.0 * tile_scale as f32, 32.0 * tile_scale as f32),
+                )
+                .with_src_rect(Rect::new(
+                    tile_src_x + 0.5,
+                    tile_src_y + 0.5,
+                    31.0,
+                    31.0,
+                )),
+            );
     }
 
     // Create entities with components.
@@ -66,23 +72,17 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
         .create_entity()
         .add_component(TransformComponent(glam::Vec2::ZERO))
         .add_component(VelocityComponent(Vec2::new(50.0, 0.0)))
-        .add_component(SpriteComponent::new(
-            "tank".to_string(),
-            None,
-            Vec2::new(32.0, 32.0),
-            1,
-        ));
+        .add_component(
+            SpriteComponent::new("tank".to_string(), Vec2::new(32.0, 32.0)).with_z_index(1),
+        );
 
     ecs.entity_manager
         .create_entity()
         .add_component(TransformComponent(Vec2::new(100.0, 0.0)))
         .add_component(VelocityComponent(Vec2::new(-50.0, 0.0)))
-        .add_component(SpriteComponent::new(
-            "truck".to_string(),
-            None,
-            Vec2::new(32.0, 32.0),
-            1,
-        ));
+        .add_component(
+            SpriteComponent::new("truck".to_string(), Vec2::new(32.0, 32.0)).with_z_index(1),
+        );
 }
 
 #[macroquad::main(window_conf)]
