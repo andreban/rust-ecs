@@ -1,4 +1,5 @@
 mod components;
+mod events;
 mod systems;
 mod tilemap;
 
@@ -10,13 +11,8 @@ use std::{
 use components::{SpriteComponent, TransformComponent, VelocityComponent};
 use macroquad::prelude::*;
 
-use rust_ecs::{Entity, EntityComponentSystem};
+use rust_ecs::EntityComponentSystem;
 use tilemap::load_map;
-
-struct CollisionEvent {
-    pub entity_a: Entity,
-    pub entity_b: Entity,
-}
 
 fn window_conf() -> Conf {
     Conf { window_title: "Demo".to_string(), ..Default::default() }
@@ -40,10 +36,10 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
         .unwrap();
 
     // Combining Component queries with system functions, we can add systems like this:
-    ecs.add_system(systems::render_system());
-    ecs.add_system(systems::collision_system());
-    ecs.add_system(systems::movement_system());
-    ecs.add_system(systems::damage_system());
+    ecs.add_system(systems::create_render_system());
+    ecs.add_system(systems::create_collision_system());
+    ecs.add_system(systems::create_movement_system());
+    ecs.add_system(systems::create_damage_system());
 
     let tiles = load_map("assets/tilemaps/jungle.map").unwrap();
     let tile_scale = 2;

@@ -1,13 +1,5 @@
-use macroquad::prelude::{Rect, Vec2};
+use macroquad::prelude::*;
 use rust_ecs::Component;
-
-// A transform component, with the entity position.
-#[derive(rust_ecs::derive::Component, Debug)]
-pub struct TransformComponent(pub Vec2);
-
-// A velocity component, with the entity position.
-#[derive(rust_ecs::derive::Component, Debug)]
-pub struct VelocityComponent(pub Vec2);
 
 #[derive(rust_ecs::derive::Component, Debug)]
 pub struct SpriteComponent {
