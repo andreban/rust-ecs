@@ -1,6 +1,7 @@
 use std::cell::{Ref, RefMut};
 
 use glam::Vec2;
+use rust_ecs::systems::{System, SystemBuilder};
 use rust_ecs::{Component, EntityComponentSystem, Query};
 use std::time::Duration;
 
@@ -14,28 +15,48 @@ pub struct VelocityComponent(glam::Vec2);
 
 // The movement system uses a mutable TransformComponent and an immutable VelocityComponent,
 // updating the entity position.
-fn movement_system(query: Query<(RefMut<TransformComponent>, Ref<VelocityComponent>)>) {
-    for (mut transform, velocity) in query.values() {
-        transform.0 += velocity.0;
-    }
+fn movement_system() -> System {
+    SystemBuilder::new()
+        .require_component::<TransformComponent>()
+        .require_component::<VelocityComponent>()
+        .with_update(|entities, _, _, em, _| {
+            for entity in entities {
+                let mut transform = em.get_component_mut::<TransformComponent>(*entity).unwrap();
+                let velocity = em.get_component::<VelocityComponent>(*entity).unwrap();
+                transform.0 += velocity.0;
+            }
+        })
+        .build()
 }
 
 // The render system prints the player position to the console.
-fn render_system(query: Query<Ref<TransformComponent>>) {
-    for transform in query.values() {
-        println!("Position: {:?}", transform.0);
-    }
+fn render_system() -> System {
+    SystemBuilder::new()
+        .require_component::<TransformComponent>()
+        .with_update(|entities, _, _, em, _| {
+            for entity in entities {
+                let transform = em.get_component::<TransformComponent>(*entity).unwrap();
+                println!("Position: {:?}", transform.0);
+            }
+        })
+        .build()
 }
 
 fn main() {
     let mut ecs = EntityComponentSystem::new();
 
     // Combining Component queries with system functions, we can add systems like this:
-    ecs.add_system(|_, _, em, _| movement_system(em.into()));
-    ecs.add_system(|_, _, em, _| render_system(em.into()));
+    ecs.add_system(movement_system());
+    ecs.add_system(render_system());
 
     // Or manually create a system function:
-    ecs.add_system(|_, _, em, _| println!("Hello world!"));
+    ecs.add_system(
+        SystemBuilder::new()
+            .with_update(|_, _, _, _, _| {
+                println!("Hello from a system function!");
+            })
+            .build(),
+    );
 
     // Create entities with components.
     ecs.entity_manager
