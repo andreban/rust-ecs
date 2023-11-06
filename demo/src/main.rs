@@ -4,6 +4,8 @@ mod systems;
 mod tilemap;
 
 use std::{
+    cell::RefCell,
+    rc::Rc,
     thread,
     time::{Duration, Instant},
 };
@@ -14,14 +16,14 @@ use components::{
 use events::KeyboardEvent;
 use macroquad::prelude::*;
 
-use rust_ecs::EntityComponentSystem;
+use rust_ecs::{events::EventBus, EntityComponentSystem, EntityManager};
 use tilemap::load_map;
 
 fn window_conf() -> Conf {
     Conf { window_title: "Demo".to_string(), ..Default::default() }
 }
 
-pub async fn setup(ecs: &mut EntityComponentSystem) {
+pub async fn setup(ecs: &mut EntityComponentSystem<'_>) {
     // Load assets.
     ecs.asset_manager
         .load_texture("tank", "assets/images/tank-panther-right.png")
@@ -44,11 +46,11 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
         .unwrap();
 
     // Combining Component queries with system functions, we can add systems like this:
-    ecs.add_system(systems::create_render_system());
-    ecs.add_system(systems::create_collision_system());
-    ecs.add_system(systems::create_movement_system());
-    ecs.add_system(systems::create_damage_system());
-    ecs.add_system(systems::create_keyboard_movement_system());
+    ecs.add_system(systems::RenderSystem::default());
+    ecs.add_system(systems::CollisionSystem::default());
+    ecs.add_system(systems::MovementSystem::default());
+    ecs.add_system(systems::DamageSystem::default());
+    // ecs.add_system(systems::create_keyboard_movement_system());
 
     let tiles = load_map("assets/tilemaps/jungle.map").unwrap();
     let tile_scale = 2;
@@ -59,71 +61,73 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
         let tile_src_y = (tile.sprite_id / 10 * 32) as f32;
         let tile_src_x = (tile.sprite_id % 10 * 32) as f32;
 
-        ecs.entity_manager
-            .create_entity()
-            .add_component(TransformComponent(Vec2::new(tile_x, tile_y)))
-            .add_component(
-                SpriteComponent::new(
-                    "jungle".to_string(),
-                    Vec2::new(32.0 * tile_scale as f32, 32.0 * tile_scale as f32),
-                )
-                .with_src_rect(Rect::new(
-                    tile_src_x + 0.5,
-                    tile_src_y + 0.5,
-                    31.0,
-                    31.0,
-                )),
-            );
+        let entity = ecs.create_entity();
+        ecs.add_component(entity, TransformComponent(Vec2::new(tile_x, tile_y)));
+        ecs.add_component(
+            entity,
+            SpriteComponent::new(
+                "jungle".to_string(),
+                Vec2::new(32.0 * tile_scale as f32, 32.0 * tile_scale as f32),
+            )
+            .with_src_rect(Rect::new(tile_src_x + 0.5, tile_src_y + 0.5, 31.0, 31.0)),
+        )
     }
 
     // Create entities with components.
-    ecs.entity_manager
-        .create_entity()
-        .add_component(TransformComponent(glam::Vec2::ZERO))
-        .add_component(VelocityComponent(Vec2::new(50.0, 0.0)))
-        .add_component(
-            SpriteComponent::new("tank".to_string(), Vec2::new(32.0, 32.0)).with_z_index(1),
-        );
+    let entity = ecs.create_entity();
+    ecs.add_component(entity, TransformComponent(glam::Vec2::ZERO));
+    ecs.add_component(entity, VelocityComponent(Vec2::new(50.0, 0.0)));
+    ecs.add_component(
+        entity,
+        SpriteComponent::new("tank".to_string(), Vec2::new(32.0, 32.0)).with_z_index(1),
+    );
 
-    ecs.entity_manager
-        .create_entity()
-        .add_component(TransformComponent(Vec2::new(100.0, 0.0)))
-        .add_component(VelocityComponent(Vec2::new(-50.0, 0.0)))
-        .add_component(
-            SpriteComponent::new("truck".to_string(), Vec2::new(32.0, 32.0)).with_z_index(1),
-        );
+    let entity = ecs.create_entity();
+    ecs.add_component(entity, TransformComponent(Vec2::new(100.0, 0.0)));
+    ecs.add_component(entity, VelocityComponent(Vec2::new(-50.0, 0.0)));
+    ecs.add_component(
+        entity,
+        SpriteComponent::new("truck".to_string(), Vec2::new(32.0, 32.0)).with_z_index(1),
+    );
 
-    ecs.entity_manager
-        .create_entity()
-        .add_component(TransformComponent(Vec2::new(0.0, 100.0)))
-        .add_component(VelocityComponent(Vec2::new(0.0, 0.0)))
-        .add_component(KeyboardControlComponent(100.0))
-        .add_component(
-            SpriteComponent::new("chopper".to_string(), Vec2::new(32.0, 32.0))
-                .with_z_index(1)
-                .with_src_rect(Rect::new(0.0, 0.0, 32.0, 32.0)),
-        );
+    let entity = ecs.create_entity();
+    ecs.add_component(entity, TransformComponent(Vec2::new(0.0, 100.0)));
+    ecs.add_component(entity, VelocityComponent(Vec2::new(0.0, 0.0)));
+    ecs.add_component(entity, KeyboardControlComponent(100.0));
+    ecs.add_component(
+        entity,
+        SpriteComponent::new("chopper".to_string(), Vec2::new(32.0, 32.0))
+            .with_z_index(1)
+            .with_src_rect(Rect::new(0.0, 0.0, 32.0, 32.0)),
+    );
 }
 
-fn handle_keyboard_events(ecs: &mut EntityComponentSystem) {
+fn handle_keyboard_events(
+    entity_manager: Rc<RefCell<EntityManager>>,
+    event_bus: Rc<RefCell<EventBus>>,
+) {
     if is_key_pressed(KeyCode::Up) {
-        ecs.event_bus
-            .emit(&mut ecs.entity_manager, KeyboardEvent(KeyCode::Up));
+        event_bus
+            .borrow()
+            .emit(entity_manager.clone(), KeyboardEvent(KeyCode::Up));
     }
 
     if is_key_pressed(KeyCode::Right) {
-        ecs.event_bus
-            .emit(&mut ecs.entity_manager, KeyboardEvent(KeyCode::Right));
+        event_bus
+            .borrow()
+            .emit(entity_manager.clone(), KeyboardEvent(KeyCode::Right));
     }
 
     if is_key_pressed(KeyCode::Down) {
-        ecs.event_bus
-            .emit(&mut ecs.entity_manager, KeyboardEvent(KeyCode::Down));
+        event_bus
+            .borrow()
+            .emit(entity_manager.clone(), KeyboardEvent(KeyCode::Down));
     }
 
     if is_key_pressed(KeyCode::Left) {
-        ecs.event_bus
-            .emit(&mut ecs.entity_manager, KeyboardEvent(KeyCode::Left));
+        event_bus
+            .borrow()
+            .emit(entity_manager.clone(), KeyboardEvent(KeyCode::Left));
     }
 }
 
@@ -143,7 +147,7 @@ async fn main() {
             continue;
         }
 
-        handle_keyboard_events(&mut ecs);
+        handle_keyboard_events(ecs.entity_manager.clone(), ecs.event_bus.clone());
 
         clear_background(BLACK);
         ecs.update(time.elapsed());

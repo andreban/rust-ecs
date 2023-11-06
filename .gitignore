@@ -2,3 +2,5 @@
 .vscode
 demo/target
 demo/assets
+.DS_Store
+demo/.DS_Store
