@@ -87,7 +87,7 @@ impl System for CollisionSystem {
 }
 
 impl EventListener for CollisionSystem {
-    fn on_event(&self, em: Rc<RefCell<EntityManager>>, event: &rust_ecs::events::Event) {
+    fn on_event(&self, _em: Rc<RefCell<EntityManager>>, _event: &rust_ecs::events::Event) {
         todo!()
     }
 }

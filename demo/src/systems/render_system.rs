@@ -48,13 +48,11 @@ impl System for RenderSystem {
         entity_manager: Rc<RefCell<EntityManager>>,
         _event_bus: Rc<RefCell<EventBus>>,
     ) {
-        println!("Render: {}", self.entities.len());
         let em = entity_manager.borrow();
         let mut entities = self
             .entities
             .iter()
             .map(|entity| {
-                println!("{:?}", entity);
                 let transform = em.get_component::<TransformComponent>(*entity).unwrap();
                 let sprite = em.get_component::<SpriteComponent>(*entity).unwrap();
                 (transform, sprite)
@@ -81,7 +79,7 @@ impl System for RenderSystem {
 }
 
 impl EventListener for RenderSystem {
-    fn on_event(&self, em: Rc<RefCell<EntityManager>>, event: &rust_ecs::events::Event) {
+    fn on_event(&self, _em: Rc<RefCell<EntityManager>>, _event: &rust_ecs::events::Event) {
         todo!()
     }
 }

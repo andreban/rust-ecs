@@ -1,5 +1,5 @@
 mod asset_manager;
-mod entity;
+mod entity_manager;
 pub mod events;
 pub mod systems;
 
@@ -10,21 +10,23 @@ pub mod derive {
 use std::{cell::RefCell, rc::Rc, time::Duration};
 
 pub use asset_manager::AssetManager;
-pub use entity::{get_next_component_type_id, Component, Entity, EntityManager, Query, Signature};
+pub use entity_manager::{
+    get_next_component_type_id, Component, Entity, EntityManager, Query, Signature,
+};
 use events::EventBus;
 use systems::System;
 
-pub struct EntityComponentSystem<'a> {
+pub struct EntityComponentSystem {
     pub entity_manager: Rc<RefCell<EntityManager>>,
-    pub systems: Vec<Box<dyn System>>,
+    pub systems: Vec<Rc<RefCell<Box<dyn System>>>>,
     pub asset_manager: AssetManager,
-    pub event_bus: Rc<RefCell<EventBus<'a>>>,
+    pub event_bus: Rc<RefCell<EventBus>>,
 }
 
-impl<'a> EntityComponentSystem<'a> {
+impl EntityComponentSystem {
     pub fn new() -> Self {
         EntityComponentSystem {
-            entity_manager: Rc::new(RefCell::new(entity::EntityManager::new())),
+            entity_manager: Rc::new(RefCell::new(entity_manager::EntityManager::new())),
             systems: Vec::new(),
             asset_manager: AssetManager::default(),
             event_bus: Rc::new(RefCell::new(EventBus::default())),
@@ -32,28 +34,30 @@ impl<'a> EntityComponentSystem<'a> {
     }
 
     pub fn add_system<T: System + 'static>(&mut self, system: T) {
-        let boxed: Box<dyn System> = Box::new(system);
+        let boxed: Rc<RefCell<Box<dyn System>>> = Rc::new(RefCell::new(Box::new(system)));
         self.systems.push(boxed);
     }
 
-    pub fn update<'b>(&'a self, delta_time: Duration) {
-        // for entity in self.entity_manager.borrow().entities_to_despawn.iter() {
-        //     for system in &self.systems {
-        //         system.remove_entity(*entity);
-        //     }
-        // }
+    pub fn update(&self, delta_time: Duration) {
+        for entity in self.entity_manager.borrow().entities_to_despawn.iter() {
+            for system in &self.systems {
+                let mut system = system.borrow_mut();
+                system.remove_entity(*entity);
+            }
+        }
 
         self.entity_manager.borrow_mut().update();
         self.event_bus.borrow_mut().clear();
 
         for system in &self.systems {
-            for type_id in system.get_event_type() {
-                self.event_bus.borrow_mut().subscribe_type(*type_id, system);
+            for type_id in system.borrow().get_event_type() {
+                let mut eb = self.event_bus.borrow_mut();
+                eb.subscribe_type(*type_id, system.clone());
             }
         }
 
         for system in &self.systems {
-            system.update(
+            system.borrow().update(
                 delta_time,
                 &self.asset_manager,
                 self.entity_manager.clone(),
@@ -72,8 +76,8 @@ impl<'a> EntityComponentSystem<'a> {
         let signature = em.get_signature(entity).unwrap();
 
         for system in &mut self.systems {
-            if system.signature().is_subset(signature) {
-                system.add_entity(entity);
+            if system.borrow().signature().is_subset(signature) {
+                system.borrow_mut().add_entity(entity);
             }
         }
     }
@@ -83,14 +87,14 @@ impl<'a> EntityComponentSystem<'a> {
         em.remove_component::<C>(entity);
         let signature = em.get_signature(entity).unwrap();
         for system in &mut self.systems {
-            if !system.signature().is_subset(signature) {
-                system.remove_entity(entity);
+            if !system.borrow().signature().is_subset(signature) {
+                system.borrow_mut().remove_entity(entity);
             }
         }
     }
 }
 
-impl<'a> Default for EntityComponentSystem<'a> {
+impl Default for EntityComponentSystem {
     fn default() -> Self {
         Self::new()
     }

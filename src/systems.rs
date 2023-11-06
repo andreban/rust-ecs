@@ -1,7 +1,7 @@
 use std::{any::TypeId, cell::RefCell, rc::Rc, time::Duration};
 
 use crate::{
-    entity::Signature,
+    entity_manager::Signature,
     events::{EventBus, EventListener},
     AssetManager, Entity, EntityManager,
 };

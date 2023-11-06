@@ -25,7 +25,7 @@ impl Default for MovementSystem {
 }
 
 impl EventListener for MovementSystem {
-    fn on_event(&self, em: Rc<RefCell<EntityManager>>, event: &rust_ecs::events::Event) {
+    fn on_event(&self, _em: Rc<RefCell<EntityManager>>, _event: &rust_ecs::events::Event) {
         todo!()
     }
 }
@@ -52,7 +52,6 @@ impl System for MovementSystem {
         entity_manager: Rc<RefCell<EntityManager>>,
         _event_bus: Rc<RefCell<EventBus>>,
     ) {
-        println!("{}", self.entities.len());
         for entity in &self.entities {
             let em = entity_manager.borrow_mut();
             let mut transform = em.get_component_mut::<TransformComponent>(*entity).unwrap();

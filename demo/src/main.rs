@@ -23,7 +23,7 @@ fn window_conf() -> Conf {
     Conf { window_title: "Demo".to_string(), ..Default::default() }
 }
 
-pub async fn setup(ecs: &mut EntityComponentSystem<'_>) {
+pub async fn setup(ecs: &mut EntityComponentSystem) {
     // Load assets.
     ecs.asset_manager
         .load_texture("tank", "assets/images/tank-panther-right.png")
@@ -50,7 +50,7 @@ pub async fn setup(ecs: &mut EntityComponentSystem<'_>) {
     ecs.add_system(systems::CollisionSystem::default());
     ecs.add_system(systems::MovementSystem::default());
     ecs.add_system(systems::DamageSystem::default());
-    // ecs.add_system(systems::create_keyboard_movement_system());
+    ecs.add_system(systems::KeyboardMovementSystem::default());
 
     let tiles = load_map("assets/tilemaps/jungle.map").unwrap();
     let tile_scale = 2;

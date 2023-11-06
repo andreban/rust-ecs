@@ -5,7 +5,7 @@ use std::{
     marker::PhantomData,
 };
 
-use crate::entity::Signature;
+use crate::Signature;
 
 use super::{component::Component, EntityId, EntityManager};
 
