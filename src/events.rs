@@ -1,36 +1,48 @@
 use std::{
     any::{Any, TypeId},
+    cell::RefCell,
     collections::HashMap,
+    rc::Rc,
 };
 
-use crate::EntityManager;
+use crate::{systems::System, EntityManager};
 
-type EventHandler = Box<dyn FnMut(&mut EntityManager, &Box<dyn Any>)>;
+type SystemRef = Rc<RefCell<Box<(dyn System + 'static)>>>;
+
+pub struct Event {
+    data: Box<dyn Any + 'static>,
+}
+
+impl Event {
+    pub fn new<T: Clone + 'static>(data: T) -> Self {
+        Self { data: Box::new(data) }
+    }
+    pub fn get_data<T: Clone + 'static>(&self) -> Option<&T> {
+        self.data.downcast_ref::<T>()
+    }
+}
+
+pub trait EventListener {
+    fn on_event(&self, _em: Rc<RefCell<EntityManager>>, _event: &Event) {}
+}
 
 #[derive(Default)]
 pub struct EventBus {
-    listeners: HashMap<TypeId, Vec<EventHandler>>,
+    listeners: HashMap<TypeId, Vec<SystemRef>>,
 }
 
 impl EventBus {
-    pub fn add_listener<T: 'static>(
-        &mut self,
-        mut listener: impl FnMut(&mut EntityManager, &T) + 'static,
-    ) {
-        let type_id = std::any::TypeId::of::<T>();
+    pub fn subscribe_type(&mut self, type_id: TypeId, listener: SystemRef) {
         let listeners = self.listeners.entry(type_id).or_default();
-        listeners.push(Box::new(move |em, e| {
-            let data = e.downcast_ref::<T>().unwrap();
-            listener(em, data);
-        }));
+        listeners.push(listener);
     }
 
-    pub fn emit<T: 'static>(&mut self, em: &mut EntityManager, event: T) {
-        let type_id = std::any::TypeId::of::<T>();
-        if let Some(listeners) = self.listeners.get_mut(&type_id) {
-            let wrapped = Box::new(event) as Box<dyn Any + 'static>;
+    pub fn emit<T: Clone + 'static>(&self, em: Rc<RefCell<EntityManager>>, data: T) {
+        let type_id = TypeId::of::<T>();
+        if let Some(listeners) = self.listeners.get(&type_id) {
+            let event = Event::new(data);
             for listener in listeners {
-                listener(em, &wrapped);
+                listener.borrow().on_event(em.clone(), &event);
             }
         }
     }

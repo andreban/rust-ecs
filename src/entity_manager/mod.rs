@@ -23,8 +23,8 @@ pub type Signature = FixedBitSet;
 pub struct EntityManager {
     components: HashMap<ComponentTypeId, HashMap<EntityId, RefCell<Box<dyn Any>>>>,
     entities: HashMap<EntityId, Entity>,
-    entities_to_spawn: HashSet<Entity>,
-    entities_to_despawn: HashSet<Entity>,
+    pub(crate) entities_to_spawn: HashSet<Entity>,
+    pub(crate) entities_to_despawn: HashSet<Entity>,
     entity_component_signatures: HashMap<EntityId, Signature>,
 }
 
@@ -61,16 +61,11 @@ impl EntityManager {
     }
 
     /// Creates a new entity and enqueues it to be added in the next update.
-    pub fn create_entity(&mut self) -> EntityBuilder {
+    pub fn create_entity(&mut self) -> Entity {
         let id: EntityId = get_next_entity_id();
         let entity = Entity::new(id);
         self.entities_to_spawn.insert(entity);
-        EntityBuilder { entity, entity_manager: self }
-    }
-
-    /// Returns an `EntityBuilder` to add/remove components from the entity.
-    pub fn edit_entity(&mut self, id: EntityId) -> EntityBuilder {
-        EntityBuilder { entity: Entity::new(id), entity_manager: self }
+        entity
     }
 
     /// Enqueues an entity to be destroyed in the next update.
@@ -166,6 +161,10 @@ impl EntityManager {
             .collect()
     }
 
+    pub fn get_signature(&self, entity: Entity) -> Option<&Signature> {
+        self.entity_component_signatures.get(&entity.id())
+    }
+
     pub fn create_query<T>(&self) -> Query<T> {
         Query::new(self)
     }
@@ -174,35 +173,5 @@ impl EntityManager {
 impl Default for EntityManager {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-pub struct EntityBuilder<'a> {
-    entity: Entity,
-    entity_manager: &'a mut EntityManager,
-}
-
-impl<'a> EntityBuilder<'a> {
-    pub fn add_component<C: Component + 'static>(&mut self, component: C) -> &mut Self {
-        let component_type_id = C::get_type_id();
-
-        println!(
-            "Added Component: Entity {}, Component name {}, Component ID: {}",
-            self.entity.id(),
-            std::any::type_name::<C>(),
-            component_type_id
-        );
-
-        self.entity_manager.add_component(self.entity, component);
-        self
-    }
-
-    pub fn remove_component<C: Component + 'static>(&mut self) -> &mut Self {
-        self.entity_manager.remove_component::<C>(self.entity);
-        self
-    }
-
-    pub fn entity(&self) -> Entity {
-        self.entity
     }
 }
