@@ -39,8 +39,6 @@ impl System for RenderSystem {
         self.entities.remove(&entity);
     }
 
-    // fn subscribe_events(&self, _: Rc<RefCell<EventBus>>) {}
-
     fn update(
         &self,
         _delta_time: std::time::Duration,
@@ -78,8 +76,4 @@ impl System for RenderSystem {
     }
 }
 
-impl EventListener for RenderSystem {
-    fn on_event(&self, _em: Rc<RefCell<EntityManager>>, _event: &rust_ecs::events::Event) {
-        todo!()
-    }
-}
+impl EventListener for RenderSystem {}

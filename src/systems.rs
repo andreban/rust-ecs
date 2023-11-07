@@ -13,11 +13,13 @@ pub trait System: EventListener {
     fn get_event_type(&self) -> &[TypeId] {
         &[]
     }
+    /// The update function is called for every frame.
     fn update(
         &self,
-        delta_time: Duration,
-        asset_manager: &AssetManager,
-        entity_manager: Rc<RefCell<EntityManager>>,
-        event_bus: Rc<RefCell<EventBus>>,
-    );
+        _delta_time: Duration,
+        _asset_manager: &AssetManager,
+        _entity_manager: Rc<RefCell<EntityManager>>,
+        _event_bus: Rc<RefCell<EventBus>>,
+    ) {
+    }
 }

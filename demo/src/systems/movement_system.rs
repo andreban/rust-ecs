@@ -24,11 +24,7 @@ impl Default for MovementSystem {
     }
 }
 
-impl EventListener for MovementSystem {
-    fn on_event(&self, _em: Rc<RefCell<EntityManager>>, _event: &rust_ecs::events::Event) {
-        todo!()
-    }
-}
+impl EventListener for MovementSystem {}
 
 impl System for MovementSystem {
     fn signature(&self) -> &Signature {
@@ -42,8 +38,6 @@ impl System for MovementSystem {
     fn remove_entity(&mut self, entity: Entity) {
         self.entities.remove(&entity);
     }
-
-    // fn subscribe_events(&self, _: Rc<RefCell<EventBus>>) {}
 
     fn update(
         &self,

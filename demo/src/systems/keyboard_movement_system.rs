@@ -1,5 +1,5 @@
 use macroquad::prelude::{KeyCode, Vec2};
-use rust_ecs::events::{EventBus, EventListener};
+use rust_ecs::events::EventListener;
 use rust_ecs::systems::System;
 use rust_ecs::{Component, Entity, EntityManager, Signature};
 use std::any::TypeId;
@@ -44,15 +44,6 @@ impl System for KeyboardMovementSystem {
     fn get_event_type(&self) -> &[std::any::TypeId] {
         self.event_types.as_slice()
     }
-
-    fn update(
-        &self,
-        _delta_time: std::time::Duration,
-        _asset_manager: &rust_ecs::AssetManager,
-        _entity_manager: Rc<RefCell<EntityManager>>,
-        _event_bus: Rc<RefCell<EventBus>>,
-    ) {
-    }
 }
 
 impl EventListener for KeyboardMovementSystem {
@@ -73,23 +64,3 @@ impl EventListener for KeyboardMovementSystem {
         }
     }
 }
-
-// pub fn create_keyboard_movement_system() -> System {
-//     SystemBuilder::new()
-//         .with_setup_listeners(|event_bus| {
-//             event_bus.add_listener(|em, event: &KeyboardEvent| {
-//                 let query =
-//                     em.create_query::<(RefMut<VelocityComponent>, Ref<KeyboardControlComponent>)>();
-//                 for (mut velocity, keyboard_control) in query.values() {
-//                     match event.0 {
-//                         KeyCode::Up => velocity.0 = Vec2::new(0.0, -keyboard_control.0),
-//                         KeyCode::Right => velocity.0 = Vec2::new(keyboard_control.0, 0.0),
-//                         KeyCode::Down => velocity.0 = Vec2::new(0.0, keyboard_control.0),
-//                         KeyCode::Left => velocity.0 = Vec2::new(-keyboard_control.0, 0.0),
-//                         _ => {}
-//                     }
-//                 }
-//             });
-//         })
-//         .build()
-// }

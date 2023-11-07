@@ -1,10 +1,6 @@
 use std::{any::TypeId, cell::RefCell, collections::HashSet, rc::Rc};
 
-use rust_ecs::{
-    events::{EventBus, EventListener},
-    systems::System,
-    Entity, EntityManager, Signature,
-};
+use rust_ecs::{events::EventListener, systems::System, Entity, EntityManager, Signature};
 
 use crate::events::CollisionEvent;
 
@@ -36,15 +32,6 @@ impl System for DamageSystem {
 
     fn get_event_type(&self) -> &[std::any::TypeId] {
         self.event_types.as_slice()
-    }
-
-    fn update(
-        &self,
-        _delta_time: std::time::Duration,
-        _asset_manager: &rust_ecs::AssetManager,
-        _entity_manager: Rc<RefCell<EntityManager>>,
-        _event_bus: Rc<RefCell<EventBus>>,
-    ) {
     }
 }
 

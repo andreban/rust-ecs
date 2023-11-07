@@ -140,9 +140,11 @@ impl<'a, A: Component + 'static, B: Component + 'static> From<&'a EntityManager>
     }
 }
 
+type AnyRefCell = RefCell<Box<dyn Any>>;
+
 // Builds a component pair from the components HashMap.
 fn get_component<A: Component + 'static, B: Component + 'static>(
-    components: &HashMap<usize, HashMap<usize, RefCell<Box<dyn Any>>>>,
+    components: &HashMap<usize, HashMap<usize, AnyRefCell>>,
     entity_id: EntityId,
 ) -> (RefMut<A>, Ref<B>) {
     let a_id = A::get_type_id();

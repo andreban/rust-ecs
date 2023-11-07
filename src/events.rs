@@ -7,6 +7,8 @@ use std::{
 
 use crate::{systems::System, EntityManager};
 
+type SystemRef = Rc<RefCell<Box<(dyn System + 'static)>>>;
+
 pub struct Event {
     data: Box<dyn Any + 'static>,
 }
@@ -21,20 +23,16 @@ impl Event {
 }
 
 pub trait EventListener {
-    fn on_event(&self, em: Rc<RefCell<EntityManager>>, event: &Event);
+    fn on_event(&self, _em: Rc<RefCell<EntityManager>>, _event: &Event) {}
 }
 
 #[derive(Default)]
 pub struct EventBus {
-    listeners: HashMap<TypeId, Vec<Rc<RefCell<Box<(dyn System + 'static)>>>>>,
+    listeners: HashMap<TypeId, Vec<SystemRef>>,
 }
 
 impl EventBus {
-    pub fn subscribe_type(
-        &mut self,
-        type_id: TypeId,
-        listener: Rc<RefCell<Box<dyn System + 'static>>>,
-    ) {
+    pub fn subscribe_type(&mut self, type_id: TypeId, listener: SystemRef) {
         let listeners = self.listeners.entry(type_id).or_default();
         listeners.push(listener);
     }
