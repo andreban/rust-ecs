@@ -12,20 +12,16 @@ use std::{
     collections::{HashMap, HashSet},
 };
 
-use fixedbitset::FixedBitSet;
+use crate::component_signature::ComponentSignature;
 
 use self::entity::get_next_entity_id;
-
-// The signature of an entity is a bitset that indicates which components the entity has,
-// using the ComponentTypeId.
-pub type Signature = FixedBitSet;
 
 pub struct EntityManager {
     components: HashMap<ComponentTypeId, HashMap<EntityId, RefCell<Box<dyn Any>>>>,
     entities: HashMap<EntityId, Entity>,
     pub(crate) entities_to_spawn: HashSet<Entity>,
     pub(crate) entities_to_despawn: HashSet<Entity>,
-    entity_component_signatures: HashMap<EntityId, Signature>,
+    entity_component_signatures: HashMap<EntityId, ComponentSignature>,
 }
 
 impl EntityManager {
@@ -82,8 +78,8 @@ impl EntityManager {
         // Update the entity signature to indicate that the entity has the component.
         self.entity_component_signatures
             .entry(entity.id())
-            .or_insert_with(|| FixedBitSet::with_capacity(32))
-            .set(component_type_id, true);
+            .or_default()
+            .require_component::<C>();
 
         // Add the component to the component storage.
         self.components
@@ -120,7 +116,7 @@ impl EntityManager {
         }
 
         if let Some(signature) = self.entity_component_signatures.get_mut(&entity.id()) {
-            signature.set(component_type_id, false);
+            signature.remove_component::<C>();
         }
     }
 
@@ -147,7 +143,7 @@ impl EntityManager {
             .collect()
     }
 
-    pub fn get_entities_with_signature(&self, signature: &Signature) -> Vec<Entity> {
+    pub fn get_entities_with_signature(&self, signature: &ComponentSignature) -> Vec<Entity> {
         self.entities
             .values()
             .filter(|e| {
@@ -161,7 +157,7 @@ impl EntityManager {
             .collect()
     }
 
-    pub fn get_signature(&self, entity: Entity) -> Option<&Signature> {
+    pub fn get_signature(&self, entity: Entity) -> Option<&ComponentSignature> {
         self.entity_component_signatures.get(&entity.id())
     }
 

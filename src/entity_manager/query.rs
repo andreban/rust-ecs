@@ -5,7 +5,7 @@ use std::{
     marker::PhantomData,
 };
 
-use crate::Signature;
+use crate::component_signature::ComponentSignature;
 
 use super::{component::Component, EntityId, EntityManager};
 
@@ -46,14 +46,10 @@ impl<'a, A: Component + 'static> From<&'a EntityManager> for Query<'a, Ref<'a, A
 
 impl<'a, A: Component + 'static, B: Component + 'static> Query<'a, (RefMut<'a, A>, Ref<'a, B>)> {
     pub fn values(&'a self) -> Vec<(RefMut<'a, A>, Ref<'a, B>)> {
-        // Get the IDs for the Component types.
-        let a_id = A::get_type_id();
-        let b_id = B::get_type_id();
-
         // Create a signature for the query, using the IDs for the Component types.
-        let mut query_signature = Signature::with_capacity(32);
-        query_signature.set(a_id, true);
-        query_signature.set(b_id, true);
+        let mut query_signature = ComponentSignature::default();
+        query_signature.require_component::<A>();
+        query_signature.require_component::<B>();
 
         // Filter the entities by the query signature, then map to the component pairs.
         let entities = self
@@ -81,9 +77,9 @@ impl<'a, A: Component + 'static, B: Component + 'static> Query<'a, (Ref<'a, A>, 
         let b_id = B::get_type_id();
 
         // Create a signature for the query, using the IDs for the Component types.
-        let mut query_signature = Signature::with_capacity(32);
-        query_signature.set(a_id, true);
-        query_signature.set(b_id, true);
+        let mut query_signature = ComponentSignature::default();
+        query_signature.require_component::<A>();
+        query_signature.require_component::<B>();
 
         // Filter the entities by the query signature, then map to the component pairs.
         let entities = self

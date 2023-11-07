@@ -3,7 +3,7 @@ use std::{cell::RefCell, collections::HashSet, rc::Rc};
 use rust_ecs::{
     events::{EventBus, EventListener},
     systems::System,
-    Component, Entity, EntityManager, Signature,
+    ComponentSignature, Entity, EntityManager,
 };
 
 use crate::components::{TransformComponent, VelocityComponent};
@@ -11,15 +11,15 @@ use crate::components::{TransformComponent, VelocityComponent};
 // The movement system uses a mutable TransformComponent and an immutable VelocityComponent,
 // updating the entity position.
 pub struct MovementSystem {
-    signature: Signature,
+    signature: ComponentSignature,
     entities: HashSet<Entity>,
 }
 
 impl Default for MovementSystem {
     fn default() -> Self {
-        let mut signature = Signature::with_capacity(32);
-        signature.set(TransformComponent::get_type_id(), true);
-        signature.set(VelocityComponent::get_type_id(), true);
+        let mut signature = ComponentSignature::default();
+        signature.require_component::<TransformComponent>();
+        signature.require_component::<VelocityComponent>();
         Self { signature, entities: Default::default() }
     }
 }
@@ -27,7 +27,7 @@ impl Default for MovementSystem {
 impl EventListener for MovementSystem {}
 
 impl System for MovementSystem {
-    fn signature(&self) -> &Signature {
+    fn signature(&self) -> &ComponentSignature {
         &self.signature
     }
 
