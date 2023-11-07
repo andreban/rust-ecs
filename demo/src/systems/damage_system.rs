@@ -1,11 +1,11 @@
 use std::{any::TypeId, cell::RefCell, collections::HashSet, rc::Rc};
 
-use rust_ecs::{events::EventListener, systems::System, Entity, EntityManager, Signature};
+use rust_ecs::{events::EventListener, systems::System, ComponentSignature, Entity, EntityManager};
 
 use crate::events::CollisionEvent;
 
 pub struct DamageSystem {
-    signature: Signature,
+    signature: ComponentSignature,
     entities: HashSet<Entity>,
     event_types: [TypeId; 1],
 }
@@ -13,12 +13,12 @@ pub struct DamageSystem {
 impl Default for DamageSystem {
     fn default() -> Self {
         let event_types = [std::any::TypeId::of::<CollisionEvent>()];
-        Self { signature: Signature::with_capacity(32), entities: Default::default(), event_types }
+        Self { signature: ComponentSignature::default(), entities: Default::default(), event_types }
     }
 }
 
 impl System for DamageSystem {
-    fn signature(&self) -> &Signature {
+    fn signature(&self) -> &ComponentSignature {
         &self.signature
     }
 

@@ -7,27 +7,27 @@ use macroquad::{
 use rust_ecs::{
     events::{EventBus, EventListener},
     systems::System,
-    Component, Entity, EntityManager, Signature,
+    ComponentSignature, Entity, EntityManager,
 };
 
 use crate::components::{SpriteComponent, TransformComponent};
 
 pub struct RenderSystem {
-    signature: Signature,
+    signature: ComponentSignature,
     entities: HashSet<Entity>,
 }
 
 impl Default for RenderSystem {
     fn default() -> Self {
-        let mut signature = Signature::with_capacity(32);
-        signature.set(TransformComponent::get_type_id(), true);
-        signature.set(SpriteComponent::get_type_id(), true);
+        let mut signature = ComponentSignature::default();
+        signature.require_component::<TransformComponent>();
+        signature.require_component::<SpriteComponent>();
         Self { signature, entities: Default::default() }
     }
 }
 
 impl System for RenderSystem {
-    fn signature(&self) -> &Signature {
+    fn signature(&self) -> &ComponentSignature {
         &self.signature
     }
 

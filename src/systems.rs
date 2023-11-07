@@ -1,13 +1,13 @@
 use std::{any::TypeId, cell::RefCell, rc::Rc, time::Duration};
 
 use crate::{
-    entity_manager::Signature,
+    component_signature::ComponentSignature,
     events::{EventBus, EventListener},
     AssetManager, Entity, EntityManager,
 };
 
 pub trait System: EventListener {
-    fn signature(&self) -> &Signature;
+    fn signature(&self) -> &ComponentSignature;
     fn add_entity(&mut self, entity: Entity);
     fn remove_entity(&mut self, entity: Entity);
     fn get_event_type(&self) -> &[TypeId] {

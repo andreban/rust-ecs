@@ -1,7 +1,7 @@
 use macroquad::prelude::{KeyCode, Vec2};
 use rust_ecs::events::EventListener;
 use rust_ecs::systems::System;
-use rust_ecs::{Component, Entity, EntityManager, Signature};
+use rust_ecs::{ComponentSignature, Entity, EntityManager};
 use std::any::TypeId;
 use std::cell::RefCell;
 use std::collections::HashSet;
@@ -13,7 +13,7 @@ use crate::{
 };
 
 pub struct KeyboardMovementSystem {
-    signature: Signature,
+    signature: ComponentSignature,
     entities: HashSet<Entity>,
     event_types: [TypeId; 1],
 }
@@ -21,15 +21,15 @@ pub struct KeyboardMovementSystem {
 impl Default for KeyboardMovementSystem {
     fn default() -> Self {
         let event_types = [std::any::TypeId::of::<KeyboardEvent>()];
-        let mut signature = Signature::with_capacity(32);
-        signature.set(VelocityComponent::get_type_id(), true);
-        signature.set(KeyboardControlComponent::get_type_id(), true);
+        let mut signature = ComponentSignature::default();
+        signature.require_component::<VelocityComponent>();
+        signature.require_component::<KeyboardControlComponent>();
         Self { signature, entities: Default::default(), event_types }
     }
 }
 
 impl System for KeyboardMovementSystem {
-    fn signature(&self) -> &Signature {
+    fn signature(&self) -> &ComponentSignature {
         &self.signature
     }
 

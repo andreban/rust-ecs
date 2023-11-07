@@ -1,4 +1,5 @@
 mod asset_manager;
+mod component_signature;
 mod entity_manager;
 pub mod events;
 pub mod systems;
@@ -10,9 +11,8 @@ pub mod derive {
 use std::{cell::RefCell, rc::Rc, time::Duration};
 
 pub use asset_manager::AssetManager;
-pub use entity_manager::{
-    get_next_component_type_id, Component, Entity, EntityManager, Query, Signature,
-};
+pub use component_signature::ComponentSignature;
+pub use entity_manager::{get_next_component_type_id, Component, Entity, EntityManager, Query};
 use events::EventBus;
 use systems::System;
 

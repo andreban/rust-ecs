@@ -7,7 +7,7 @@ use std::{
 use rust_ecs::{
     events::{EventBus, EventListener},
     systems::System,
-    Component, Entity, EntityManager, Signature,
+    ComponentSignature, Entity, EntityManager,
 };
 
 use crate::{
@@ -16,22 +16,22 @@ use crate::{
 };
 
 pub struct CollisionSystem {
-    signature: Signature,
+    signature: ComponentSignature,
     entities: HashSet<Entity>,
 }
 
 impl Default for CollisionSystem {
     fn default() -> Self {
-        let mut signature = Signature::with_capacity(32);
-        signature.set(SpriteComponent::get_type_id(), true);
-        signature.set(TransformComponent::get_type_id(), true);
-        signature.set(VelocityComponent::get_type_id(), true);
+        let mut signature = ComponentSignature::default();
+        signature.require_component::<SpriteComponent>();
+        signature.require_component::<TransformComponent>();
+        signature.require_component::<VelocityComponent>();
         Self { signature, entities: Default::default() }
     }
 }
 
 impl System for CollisionSystem {
-    fn signature(&self) -> &Signature {
+    fn signature(&self) -> &ComponentSignature {
         &self.signature
     }
 
