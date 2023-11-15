@@ -11,7 +11,8 @@ use std::{
 };
 
 use components::{
-    KeyboardControlComponent, SpriteComponent, TransformComponent, VelocityComponent,
+    AnimationComponent, KeyboardControlComponent, SpriteComponent, TransformComponent,
+    VelocityComponent,
 };
 use events::KeyboardEvent;
 use macroquad::prelude::*;
@@ -51,6 +52,7 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
     ecs.add_system(systems::MovementSystem::default());
     ecs.add_system(systems::DamageSystem::default());
     ecs.add_system(systems::KeyboardMovementSystem::default());
+    ecs.add_system(systems::AnimationSystem::default());
 
     let tiles = load_map("assets/tilemaps/jungle.map").unwrap();
     let tile_scale = 2;
@@ -99,6 +101,13 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
         SpriteComponent::new("chopper".to_string(), Vec2::new(32.0, 32.0))
             .with_z_index(1)
             .with_src_rect(Rect::new(0.0, 0.0, 32.0, 32.0)),
+    );
+    ecs.add_component(
+        entity,
+        AnimationComponent::new()
+            .num_frames(2)
+            .framerate(15)
+            .is_loop(true),
     );
 }
 

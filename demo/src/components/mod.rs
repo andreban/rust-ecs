@@ -1,8 +1,10 @@
+mod animation_component;
 mod keyboard_control_component;
 mod sprite_component;
 mod transform_component;
 mod velocity_component;
 
+pub use animation_component::AnimationComponent;
 pub use keyboard_control_component::KeyboardControlComponent;
 pub use sprite_component::SpriteComponent;
 pub use transform_component::TransformComponent;
