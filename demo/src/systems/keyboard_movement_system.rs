@@ -7,6 +7,7 @@ use std::cell::RefCell;
 use std::collections::HashSet;
 use std::rc::Rc;
 
+use crate::components::SpriteComponent;
 use crate::{
     components::{KeyboardControlComponent, VelocityComponent},
     events::KeyboardEvent,
@@ -24,6 +25,7 @@ impl Default for KeyboardMovementSystem {
         let mut signature = ComponentSignature::default();
         signature.require_component::<VelocityComponent>();
         signature.require_component::<KeyboardControlComponent>();
+        signature.require_component::<SpriteComponent>();
         Self { signature, entities: Default::default(), event_types }
     }
 }
@@ -51,14 +53,35 @@ impl EventListener for KeyboardMovementSystem {
         for entity in &self.entities {
             let em = em.borrow();
             let mut velocity = em.get_component_mut::<VelocityComponent>(*entity).unwrap();
+            let mut sprite = em.get_component_mut::<SpriteComponent>(*entity).unwrap();
             let keyboard_control = em
                 .get_component::<KeyboardControlComponent>(*entity)
                 .unwrap();
             match event.get_data::<KeyboardEvent>().unwrap().0 {
-                KeyCode::Up => velocity.0 = Vec2::new(0.0, -keyboard_control.0),
-                KeyCode::Right => velocity.0 = Vec2::new(keyboard_control.0, 0.0),
-                KeyCode::Down => velocity.0 = Vec2::new(0.0, keyboard_control.0),
-                KeyCode::Left => velocity.0 = Vec2::new(-keyboard_control.0, 0.0),
+                KeyCode::Up => {
+                    velocity.0 = Vec2::new(0.0, -keyboard_control.0);
+                    if let Some(rect) = sprite.src_rect.as_mut() {
+                        rect.y = 0.0;
+                    }
+                }
+                KeyCode::Right => {
+                    velocity.0 = Vec2::new(keyboard_control.0, 0.0);
+                    if let Some(rect) = sprite.src_rect.as_mut() {
+                        rect.y = 32.0;
+                    }
+                }
+                KeyCode::Down => {
+                    velocity.0 = Vec2::new(0.0, keyboard_control.0);
+                    if let Some(rect) = sprite.src_rect.as_mut() {
+                        rect.y = 64.0;
+                    }
+                }
+                KeyCode::Left => {
+                    velocity.0 = Vec2::new(-keyboard_control.0, 0.0);
+                    if let Some(rect) = sprite.src_rect.as_mut() {
+                        rect.y = 96.0;
+                    }
+                }
                 _ => {}
             }
         }

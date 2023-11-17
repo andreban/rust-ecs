@@ -50,9 +50,15 @@ impl System for AnimationSystem {
             animation.current_frame =
                 ((time - animation.start_time) * animation.framerate / 1000) % animation.num_frames;
 
+            let src_y = if let Some(src_rect) = sprite.src_rect {
+                src_rect.y
+            } else {
+                0.0
+            };
+
             sprite.src_rect = Some(Rect::new(
                 animation.current_frame as f32 * sprite.dst_size.x,
-                0.0,
+                src_y,
                 sprite.dst_size.x,
                 sprite.dst_size.y,
             ));
