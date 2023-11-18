@@ -10,7 +10,10 @@ use rust_ecs::{
     ComponentSignature, Entity, EntityManager,
 };
 
-use crate::components::{SpriteComponent, TransformComponent};
+use crate::{
+    components::{SpriteComponent, TransformComponent},
+    resources::Camera,
+};
 
 pub struct RenderSystem {
     signature: ComponentSignature,
@@ -45,8 +48,12 @@ impl System for RenderSystem {
         asset_manager: &rust_ecs::AssetManager,
         entity_manager: Rc<RefCell<EntityManager>>,
         _event_bus: Rc<RefCell<EventBus>>,
+        resources: std::rc::Rc<std::cell::RefCell<rust_ecs::Resources>>,
     ) {
         let em = entity_manager.borrow();
+        let res = resources.borrow();
+        let camera = res.get::<Camera>().unwrap();
+
         let mut entities = self
             .entities
             .iter()
@@ -60,11 +67,10 @@ impl System for RenderSystem {
 
         for (transform, sprite) in entities {
             let texture = asset_manager.get_texture(&sprite.sprite_name).unwrap();
-
             draw_texture_ex(
                 texture,
-                transform.0.x,
-                transform.0.y,
+                transform.0.x - camera.0.x,
+                transform.0.y - camera.0.y,
                 WHITE,
                 DrawTextureParams {
                     dest_size: Some(sprite.dst_size),

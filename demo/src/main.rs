@@ -1,5 +1,6 @@
 mod components;
 mod events;
+mod resources;
 mod systems;
 mod tilemap;
 
@@ -11,12 +12,13 @@ use std::{
 };
 
 use components::{
-    AnimationComponent, KeyboardControlComponent, SpriteComponent, TransformComponent,
-    VelocityComponent,
+    AnimationComponent, CameraFollowComponent, KeyboardControlComponent, SpriteComponent,
+    TransformComponent, VelocityComponent,
 };
 use events::KeyboardEvent;
 use macroquad::prelude::*;
 
+use resources::{Camera, MapDimensions};
 use rust_ecs::{events::EventBus, EntityComponentSystem, EntityManager};
 use tilemap::load_map;
 
@@ -53,6 +55,7 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
     ecs.add_system(systems::DamageSystem::default());
     ecs.add_system(systems::KeyboardMovementSystem::default());
     ecs.add_system(systems::AnimationSystem::default());
+    ecs.add_system(systems::CameraFollowSystem::default());
 
     let tiles = load_map("assets/tilemaps/jungle.map").unwrap();
     let tile_scale = 2;
@@ -109,6 +112,21 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
             .framerate(15)
             .is_loop(true),
     );
+    ecs.add_component(entity, CameraFollowComponent);
+
+    let window_conf = window_conf();
+    let camera = Camera(Rect::new(
+        0.0,
+        0.0,
+        window_conf.window_width as f32,
+        window_conf.window_height as f32,
+    ));
+
+    let map_dimensions = MapDimensions(Vec2::new(640.0, 640.0));
+    ecs.resources.borrow_mut().put::<Camera>(camera);
+    ecs.resources
+        .borrow_mut()
+        .put::<MapDimensions>(map_dimensions);
 }
 
 fn handle_keyboard_events(

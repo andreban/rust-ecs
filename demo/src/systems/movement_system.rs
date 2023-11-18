@@ -45,6 +45,7 @@ impl System for MovementSystem {
         _asset_manager: &rust_ecs::AssetManager,
         entity_manager: Rc<RefCell<EntityManager>>,
         _event_bus: Rc<RefCell<EventBus>>,
+        _resources: std::rc::Rc<std::cell::RefCell<rust_ecs::Resources>>,
     ) {
         for entity in &self.entities {
             let em = entity_manager.borrow_mut();

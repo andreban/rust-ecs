@@ -2,6 +2,7 @@ mod asset_manager;
 mod component_signature;
 mod entity_manager;
 pub mod events;
+mod resources;
 pub mod systems;
 
 pub mod derive {
@@ -14,6 +15,7 @@ pub use asset_manager::AssetManager;
 pub use component_signature::ComponentSignature;
 pub use entity_manager::{get_next_component_type_id, Component, Entity, EntityManager, Query};
 use events::EventBus;
+pub use resources::Resources;
 use systems::System;
 
 pub struct EntityComponentSystem {
@@ -21,6 +23,7 @@ pub struct EntityComponentSystem {
     pub systems: Vec<Rc<RefCell<Box<dyn System>>>>,
     pub asset_manager: AssetManager,
     pub event_bus: Rc<RefCell<EventBus>>,
+    pub resources: Rc<RefCell<Resources>>,
 }
 
 impl EntityComponentSystem {
@@ -30,6 +33,7 @@ impl EntityComponentSystem {
             systems: Vec::new(),
             asset_manager: AssetManager::default(),
             event_bus: Rc::new(RefCell::new(EventBus::default())),
+            resources: Rc::new(RefCell::new(Resources::default())),
         }
     }
 
@@ -62,6 +66,7 @@ impl EntityComponentSystem {
                 &self.asset_manager,
                 self.entity_manager.clone(),
                 self.event_bus.clone(),
+                self.resources.clone(),
             );
         }
     }

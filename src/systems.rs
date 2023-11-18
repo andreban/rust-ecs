@@ -3,7 +3,7 @@ use std::{any::TypeId, cell::RefCell, rc::Rc, time::Duration};
 use crate::{
     component_signature::ComponentSignature,
     events::{EventBus, EventListener},
-    AssetManager, Entity, EntityManager,
+    AssetManager, Entity, EntityManager, Resources,
 };
 
 pub trait System: EventListener {
@@ -20,6 +20,7 @@ pub trait System: EventListener {
         _asset_manager: &AssetManager,
         _entity_manager: Rc<RefCell<EntityManager>>,
         _event_bus: Rc<RefCell<EventBus>>,
+        _resources: Rc<RefCell<Resources>>,
     ) {
     }
 }

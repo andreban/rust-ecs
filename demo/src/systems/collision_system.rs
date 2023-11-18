@@ -51,6 +51,7 @@ impl System for CollisionSystem {
         _asset_manager: &rust_ecs::AssetManager,
         entity_manager: Rc<RefCell<EntityManager>>,
         event_bus: Rc<RefCell<EventBus>>,
+        _resources: std::rc::Rc<std::cell::RefCell<rust_ecs::Resources>>,
     ) {
         let entities = self.entities.iter().collect::<Vec<_>>();
         for (i, entity_a) in entities.iter().enumerate() {
