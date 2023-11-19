@@ -43,6 +43,19 @@ impl EntityComponentSystem {
     }
 
     pub fn update(&self, delta_time: Duration) {
+        {
+            let em = self.entity_manager.borrow();
+            for entity in em.entities_to_spawn.iter() {
+                let entity_signature = em.get_signature(*entity).unwrap();
+                for system in &self.systems {
+                    let mut system = system.borrow_mut();
+                    if system.signature().is_subset(entity_signature) {
+                        system.add_entity(*entity);
+                    }
+                }
+            }
+        }
+
         for entity in self.entity_manager.borrow().entities_to_despawn.iter() {
             for system in &self.systems {
                 let mut system = system.borrow_mut();

@@ -4,6 +4,7 @@ mod resources;
 mod systems;
 mod tilemap;
 
+use std::time::SystemTime;
 use std::{
     cell::RefCell,
     rc::Rc,
@@ -18,6 +19,7 @@ use components::{
 use events::KeyboardEvent;
 use macroquad::prelude::*;
 
+use crate::components::ProjectileEmitterComponent;
 use resources::{Camera, MapDimensions};
 use rust_ecs::{events::EventBus, EntityComponentSystem, EntityManager};
 use tilemap::load_map;
@@ -48,6 +50,11 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
         .await
         .unwrap();
 
+    ecs.asset_manager
+        .load_texture("bullet", "assets/images/bullet.png")
+        .await
+        .unwrap();
+
     // Combining Component queries with system functions, we can add systems like this:
     ecs.add_system(systems::RenderSystem::default());
     ecs.add_system(systems::CollisionSystem::default());
@@ -56,6 +63,8 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
     ecs.add_system(systems::KeyboardMovementSystem::default());
     ecs.add_system(systems::AnimationSystem::default());
     ecs.add_system(systems::CameraFollowSystem::default());
+    ecs.add_system(systems::ProjectileEmitterSystem::default());
+    ecs.add_system(systems::ProjectileLifecycleSystem::default());
 
     let tiles = load_map("assets/tilemaps/jungle.map").unwrap();
     let tile_scale = 2;
@@ -79,40 +88,67 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
     }
 
     // Create entities with components.
-    let entity = ecs.create_entity();
-    ecs.add_component(entity, TransformComponent(glam::Vec2::ZERO));
-    ecs.add_component(entity, VelocityComponent(Vec2::new(50.0, 0.0)));
+    let tank = ecs.create_entity();
+    ecs.add_component(tank, TransformComponent(glam::Vec2::ZERO));
+    ecs.add_component(tank, VelocityComponent(Vec2::new(0.0, 0.0)));
     ecs.add_component(
-        entity,
+        tank,
         SpriteComponent::new("tank".to_string(), Vec2::new(32.0, 32.0)).with_z_index(1),
     );
-
-    let entity = ecs.create_entity();
-    ecs.add_component(entity, TransformComponent(Vec2::new(100.0, 0.0)));
-    ecs.add_component(entity, VelocityComponent(Vec2::new(-50.0, 0.0)));
     ecs.add_component(
-        entity,
-        SpriteComponent::new("truck".to_string(), Vec2::new(32.0, 32.0)).with_z_index(1),
+        tank,
+        ProjectileEmitterComponent {
+            repeat_interval: Some(Duration::from_secs(1)),
+            projectile_velocity: Vec2::new(150.0, 0.0),
+            last_emitted: SystemTime::now(),
+            projectile_duration: Duration::from_secs(5),
+        },
     );
 
-    let entity = ecs.create_entity();
-    ecs.add_component(entity, TransformComponent(Vec2::new(0.0, 100.0)));
-    ecs.add_component(entity, VelocityComponent(Vec2::new(0.0, 0.0)));
-    ecs.add_component(entity, KeyboardControlComponent(100.0));
+    let truck = ecs.create_entity();
+    ecs.add_component(truck, TransformComponent(Vec2::new(100.0, 0.0)));
+    ecs.add_component(truck, VelocityComponent(Vec2::new(-0.0, 0.0)));
     ecs.add_component(
-        entity,
+        truck,
+        SpriteComponent::new("truck".to_string(), Vec2::new(32.0, 32.0)).with_z_index(1),
+    );
+    ecs.add_component(
+        truck,
+        ProjectileEmitterComponent {
+            repeat_interval: Some(Duration::from_secs(3)),
+            projectile_velocity: Vec2::new(0.0, 150.0),
+            last_emitted: SystemTime::now(),
+            projectile_duration: Duration::from_secs(5),
+        },
+    );
+
+    let chopper = ecs.create_entity();
+    ecs.add_component(chopper, TransformComponent(Vec2::new(0.0, 100.0)));
+    ecs.add_component(chopper, VelocityComponent(Vec2::new(0.0, 0.0)));
+    ecs.add_component(chopper, KeyboardControlComponent(100.0));
+    ecs.add_component(
+        chopper,
         SpriteComponent::new("chopper".to_string(), Vec2::new(32.0, 32.0))
             .with_z_index(1)
             .with_src_rect(Rect::new(0.0, 0.0, 32.0, 32.0)),
     );
     ecs.add_component(
-        entity,
+        chopper,
         AnimationComponent::new()
             .num_frames(2)
             .framerate(15)
             .is_loop(true),
     );
-    ecs.add_component(entity, CameraFollowComponent);
+    ecs.add_component(chopper, CameraFollowComponent);
+    ecs.add_component(
+        chopper,
+        ProjectileEmitterComponent {
+            repeat_interval: None,
+            projectile_velocity: Vec2::new(150.0, 150.0),
+            last_emitted: SystemTime::now(),
+            projectile_duration: Duration::from_secs(5),
+        },
+    );
 
     let window_conf = window_conf();
     let camera = Camera(Rect::new(
@@ -155,6 +191,12 @@ fn handle_keyboard_events(
         event_bus
             .borrow()
             .emit(entity_manager.clone(), KeyboardEvent(KeyCode::Left));
+    }
+
+    if is_key_pressed(KeyCode::Space) {
+        event_bus
+            .borrow()
+            .emit(entity_manager.clone(), KeyboardEvent(KeyCode::Space));
     }
 }
 

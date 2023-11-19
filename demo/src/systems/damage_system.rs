@@ -36,14 +36,14 @@ impl System for DamageSystem {
 }
 
 impl EventListener for DamageSystem {
-    fn on_event(&self, em: Rc<RefCell<EntityManager>>, event: &rust_ecs::events::Event) {
-        let event = event.get_data::<CollisionEvent>().unwrap();
-        let mut em = em.borrow_mut();
-        println!(
-            "Killing entities {:?} and {:?}",
-            event.entity_a, event.entity_b
-        );
-        em.destroy_entity(event.entity_a);
-        em.destroy_entity(event.entity_b);
+    fn on_event(&self, _em: Rc<RefCell<EntityManager>>, _event: &rust_ecs::events::Event) {
+        // let event = event.get_data::<CollisionEvent>().unwrap();
+        // let mut em = em.borrow_mut();
+        // println!(
+        //     "Killing entities {:?} and {:?}",
+        //     event.entity_a, event.entity_b
+        // );
+        // em.destroy_entity(event.entity_a);
+        // em.destroy_entity(event.entity_b);
     }
 }

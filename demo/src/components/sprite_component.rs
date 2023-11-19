@@ -1,5 +1,4 @@
 use macroquad::prelude::*;
-use rust_ecs::Component;
 
 #[derive(rust_ecs::derive::Component, Debug)]
 pub struct SpriteComponent {

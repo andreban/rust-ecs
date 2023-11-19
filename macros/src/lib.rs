@@ -7,7 +7,7 @@ pub fn component_macro_derive(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
     let name = &ast.ident;
     let gen = quote! {
-        impl Component for #name {
+        impl rust_ecs::Component for #name {
             // Gets the component type ID. This is used to uniquely identify a component type.
             fn get_type_id() -> usize {
                 // The static TYPE_ID is initialized the first time get_type_id() is called for
