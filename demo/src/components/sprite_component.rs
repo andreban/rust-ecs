@@ -9,8 +9,8 @@ pub struct SpriteComponent {
 }
 
 impl SpriteComponent {
-    pub fn new(sprite_name: String, dst_size: Vec2) -> Self {
-        Self { sprite_name, src_rect: None, dst_size, z_index: 0 }
+    pub fn new(sprite_name: &str, dst_size: Vec2) -> Self {
+        Self { sprite_name: sprite_name.to_string(), src_rect: None, dst_size, z_index: 0 }
     }
 
     pub fn with_src_rect(mut self, src_rect: Rect) -> Self {

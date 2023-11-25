@@ -74,7 +74,7 @@ impl EventListener for ProjectileEmitterSystem {
                 }
             };
             let projectile_sprite =
-                SpriteComponent::new("bullet".to_string(), Vec2::new(4.0, 4.0)).with_z_index(4);
+                SpriteComponent::new("bullet", Vec2::new(4.0, 4.0)).with_z_index(4);
             let projectile_duration = ProjectileComponent {
                 max_duration: projectile_emitter.projectile_duration,
                 created: SystemTime::now(),
@@ -140,7 +140,7 @@ impl System for ProjectileEmitterSystem {
             ));
             let projectile_velocity = VelocityComponent(projectile_emitter.projectile_velocity);
             let projectile_sprite =
-                SpriteComponent::new("bullet".to_string(), Vec2::new(4.0, 4.0)).with_z_index(4);
+                SpriteComponent::new("bullet", Vec2::new(4.0, 4.0)).with_z_index(4);
             let projectile_duration = ProjectileComponent {
                 max_duration: projectile_emitter.projectile_duration,
                 created: SystemTime::now(),

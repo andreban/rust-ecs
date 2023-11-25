@@ -9,7 +9,11 @@ pub mod derive {
     pub use macros::Component;
 }
 
-use std::{cell::RefCell, rc::Rc, time::Duration};
+use std::{
+    cell::{Ref, RefCell, RefMut},
+    rc::Rc,
+    time::Duration,
+};
 
 pub use asset_manager::AssetManager;
 pub use component_signature::ComponentSignature;
@@ -19,11 +23,11 @@ pub use resources::Resources;
 use systems::System;
 
 pub struct EntityComponentSystem {
-    pub entity_manager: Rc<RefCell<EntityManager>>,
-    pub systems: Vec<Rc<RefCell<Box<dyn System>>>>,
-    pub asset_manager: AssetManager,
-    pub event_bus: Rc<RefCell<EventBus>>,
-    pub resources: Rc<RefCell<Resources>>,
+    entity_manager: Rc<RefCell<EntityManager>>,
+    systems: Vec<Rc<RefCell<Box<dyn System>>>>,
+    asset_manager: AssetManager,
+    event_bus: Rc<RefCell<EventBus>>,
+    resources: Rc<RefCell<Resources>>,
 }
 
 impl EntityComponentSystem {
@@ -109,6 +113,38 @@ impl EntityComponentSystem {
                 system.borrow_mut().remove_entity(entity);
             }
         }
+    }
+
+    pub fn entity_manager(&self) -> Ref<EntityManager> {
+        self.entity_manager.borrow()
+    }
+
+    pub fn entity_manager_mut(&self) -> RefMut<EntityManager> {
+        self.entity_manager.borrow_mut()
+    }
+
+    pub fn entity_manager_cloned(&self) -> Rc<RefCell<EntityManager>> {
+        self.entity_manager.clone()
+    }
+
+    pub fn asset_manager(&self) -> &AssetManager {
+        &self.asset_manager
+    }
+
+    pub fn asset_manager_mut(&mut self) -> &mut AssetManager {
+        &mut self.asset_manager
+    }
+
+    pub fn resources(&self) -> Ref<Resources> {
+        self.resources.borrow()
+    }
+
+    pub fn resources_mut(&self) -> RefMut<Resources> {
+        self.resources.borrow_mut()
+    }
+
+    pub fn event_bus_cloned(&self) -> Rc<RefCell<EventBus>> {
+        self.event_bus.clone()
     }
 }
 

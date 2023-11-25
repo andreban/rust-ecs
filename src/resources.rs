@@ -3,14 +3,9 @@ use std::{
     collections::HashMap,
 };
 
+#[derive(Default)]
 pub struct Resources {
     resources: HashMap<TypeId, Box<dyn Any>>,
-}
-
-impl Default for Resources {
-    fn default() -> Self {
-        Self { resources: HashMap::new() }
-    }
 }
 
 impl Resources {

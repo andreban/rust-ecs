@@ -23,9 +23,9 @@ pub struct TagManager {
 }
 
 impl TagManager {
-    pub fn set_tag(&mut self, entity: Entity, tag: String) {
-        self.entity_tag.insert(entity.id(), tag.clone());
-        self.tag_entity.insert(tag, entity.id());
+    pub fn set_tag(&mut self, entity: Entity, tag: &str) {
+        self.entity_tag.insert(entity.id(), tag.to_string());
+        self.tag_entity.insert(tag.to_string(), entity.id());
     }
 
     pub fn remove_tag(&mut self, entity: Entity) {
@@ -34,8 +34,11 @@ impl TagManager {
         }
     }
 
-    pub fn has_tag(&self, entity: Entity, tag: &String) -> bool {
-        self.entity_tag.get(&entity.id()) == Some(tag)
+    pub fn has_tag(&self, entity: Entity, tag: &str) -> bool {
+        match self.entity_tag.get(&entity.id()) {
+            Some(t) => t == tag,
+            None => false,
+        }
     }
 
     pub fn get_entity(&self, tag: &str) -> Option<Entity> {
@@ -50,28 +53,28 @@ pub struct GroupManager {
 }
 
 impl GroupManager {
-    pub fn add_entity_to_group(&mut self, entity: Entity, group: String) {
+    pub fn add_entity_to_group(&mut self, entity: &Entity, group: &str) {
         self.entity_groups
             .entry(entity.id())
             .or_default()
-            .insert(group.clone());
+            .insert(group.to_string());
         self.group_entities
-            .entry(group)
+            .entry(group.to_string())
             .or_default()
             .insert(entity.id());
     }
 
-    pub fn remove_entity_from_group(&mut self, entity: Entity, group: String) {
+    pub fn remove_entity_from_group(&mut self, entity: &Entity, group: &str) {
         if let Some(groups) = self.entity_groups.get_mut(&entity.id()) {
-            groups.remove(&group);
+            groups.remove(group);
         }
 
-        if let Some(entities) = self.group_entities.get_mut(&group) {
+        if let Some(entities) = self.group_entities.get_mut(group) {
             entities.remove(&entity.id());
         }
     }
 
-    pub fn remove_entity(&mut self, entity: Entity) {
+    pub fn remove_entity(&mut self, entity: &Entity) {
         if let Some(groups) = self.entity_groups.remove(&entity.id()) {
             for group in groups {
                 if let Some(entities) = self.group_entities.get_mut(&group) {
@@ -81,7 +84,7 @@ impl GroupManager {
         }
     }
 
-    pub fn group_contains_entity(&self, group: &String, entity: &Entity) -> bool {
+    pub fn group_contains_entity(&self, group: &str, entity: &Entity) -> bool {
         if let Some(entities) = self.group_entities.get(group) {
             entities.contains(&entity.id())
         } else {
@@ -89,7 +92,7 @@ impl GroupManager {
         }
     }
 
-    pub fn entity_in_group(&self, entity: &Entity, group: &String) -> bool {
+    pub fn entity_in_group(&self, entity: &Entity, group: &str) -> bool {
         if let Some(groups) = self.entity_groups.get(&entity.id()) {
             groups.contains(group)
         } else {
