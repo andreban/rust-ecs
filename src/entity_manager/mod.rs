@@ -16,12 +16,96 @@ use crate::component_signature::ComponentSignature;
 
 use self::entity::get_next_entity_id;
 
+#[derive(Default)]
+pub struct TagManager {
+    entity_tag: HashMap<EntityId, String>,
+    tag_entity: HashMap<String, EntityId>,
+}
+
+impl TagManager {
+    pub fn set_tag(&mut self, entity: Entity, tag: String) {
+        self.entity_tag.insert(entity.id(), tag.clone());
+        self.tag_entity.insert(tag, entity.id());
+    }
+
+    pub fn remove_tag(&mut self, entity: Entity) {
+        if let Some(tag) = self.entity_tag.remove(&entity.id()) {
+            self.tag_entity.remove(&tag);
+        }
+    }
+
+    pub fn has_tag(&self, entity: Entity, tag: &String) -> bool {
+        self.entity_tag.get(&entity.id()) == Some(tag)
+    }
+
+    pub fn get_entity(&self, tag: &str) -> Option<Entity> {
+        self.tag_entity.get(tag).map(|id| Entity::new(*id))
+    }
+}
+
+#[derive(Default)]
+pub struct GroupManager {
+    entity_groups: HashMap<EntityId, HashSet<String>>,
+    group_entities: HashMap<String, HashSet<EntityId>>,
+}
+
+impl GroupManager {
+    pub fn add_entity_to_group(&mut self, entity: Entity, group: String) {
+        self.entity_groups
+            .entry(entity.id())
+            .or_default()
+            .insert(group.clone());
+        self.group_entities
+            .entry(group)
+            .or_default()
+            .insert(entity.id());
+    }
+
+    pub fn remove_entity_from_group(&mut self, entity: Entity, group: String) {
+        if let Some(groups) = self.entity_groups.get_mut(&entity.id()) {
+            groups.remove(&group);
+        }
+
+        if let Some(entities) = self.group_entities.get_mut(&group) {
+            entities.remove(&entity.id());
+        }
+    }
+
+    pub fn remove_entity(&mut self, entity: Entity) {
+        if let Some(groups) = self.entity_groups.remove(&entity.id()) {
+            for group in groups {
+                if let Some(entities) = self.group_entities.get_mut(&group) {
+                    entities.remove(&entity.id());
+                }
+            }
+        }
+    }
+
+    pub fn group_contains_entity(&self, group: &String, entity: &Entity) -> bool {
+        if let Some(entities) = self.group_entities.get(group) {
+            entities.contains(&entity.id())
+        } else {
+            false
+        }
+    }
+
+    pub fn entity_in_group(&self, entity: &Entity, group: &String) -> bool {
+        if let Some(groups) = self.entity_groups.get(&entity.id()) {
+            groups.contains(group)
+        } else {
+            false
+        }
+    }
+}
+
 pub struct EntityManager {
     components: HashMap<ComponentTypeId, HashMap<EntityId, RefCell<Box<dyn Any>>>>,
     entities: HashMap<EntityId, Entity>,
     pub(crate) entities_to_spawn: HashSet<Entity>,
     pub(crate) entities_to_despawn: HashSet<Entity>,
     entity_component_signatures: HashMap<EntityId, ComponentSignature>,
+    tag_manager: TagManager,
+    group_manager: GroupManager,
 }
 
 impl EntityManager {
@@ -32,6 +116,8 @@ impl EntityManager {
             entities_to_spawn: HashSet::new(),
             entities_to_despawn: HashSet::new(),
             entity_component_signatures: HashMap::new(),
+            tag_manager: Default::default(),
+            group_manager: Default::default(),
         }
     }
 
@@ -163,6 +249,22 @@ impl EntityManager {
 
     pub fn create_query<T>(&self) -> Query<T> {
         Query::new(self)
+    }
+
+    pub fn tag_manager(&self) -> &TagManager {
+        &self.tag_manager
+    }
+
+    pub fn tag_manager_mut(&mut self) -> &mut TagManager {
+        &mut self.tag_manager
+    }
+
+    pub fn group_manager(&self) -> &GroupManager {
+        &self.group_manager
+    }
+
+    pub fn group_manager_mut(&mut self) -> &mut GroupManager {
+        &mut self.group_manager
     }
 }
 

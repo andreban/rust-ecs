@@ -76,6 +76,10 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
         let tile_src_x = (tile.sprite_id % 10 * 32) as f32;
 
         let entity = ecs.create_entity();
+        ecs.entity_manager
+            .borrow_mut()
+            .tag_manager_mut()
+            .set_tag(entity, "tile".to_string());
         ecs.add_component(entity, TransformComponent(Vec2::new(tile_x, tile_y)));
         ecs.add_component(
             entity,
@@ -89,6 +93,10 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
 
     // Create entities with components.
     let tank = ecs.create_entity();
+    ecs.entity_manager
+        .borrow_mut()
+        .tag_manager_mut()
+        .set_tag(tank, "enemy".to_string());
     ecs.add_component(tank, TransformComponent(glam::Vec2::ZERO));
     ecs.add_component(tank, VelocityComponent(Vec2::new(0.0, 0.0)));
     ecs.add_component(
@@ -106,6 +114,10 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
     );
 
     let truck = ecs.create_entity();
+    ecs.entity_manager
+        .borrow_mut()
+        .tag_manager_mut()
+        .set_tag(truck, "enemy".to_string());
     ecs.add_component(truck, TransformComponent(Vec2::new(100.0, 0.0)));
     ecs.add_component(truck, VelocityComponent(Vec2::new(-0.0, 0.0)));
     ecs.add_component(
@@ -123,6 +135,10 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
     );
 
     let chopper = ecs.create_entity();
+    ecs.entity_manager
+        .borrow_mut()
+        .tag_manager_mut()
+        .set_tag(chopper, "chopper".to_string());
     ecs.add_component(chopper, TransformComponent(Vec2::new(0.0, 100.0)));
     ecs.add_component(chopper, VelocityComponent(Vec2::new(0.0, 0.0)));
     ecs.add_component(chopper, KeyboardControlComponent(100.0));
