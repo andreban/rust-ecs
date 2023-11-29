@@ -13,8 +13,8 @@ use std::{
 };
 
 use components::{
-    AnimationComponent, CameraFollowComponent, HealthComponent, KeyboardControlComponent,
-    SpriteComponent, TransformComponent, VelocityComponent,
+    AnimationComponent, Box2dColliderComponent, CameraFollowComponent, HealthComponent,
+    KeyboardControlComponent, SpriteComponent, TransformComponent, VelocityComponent,
 };
 use events::KeyboardEvent;
 use macroquad::prelude::*;
@@ -95,6 +95,10 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
     ecs.entity_manager_mut()
         .group_manager_mut()
         .add_entity_to_group(&tank, "enemy");
+    ecs.add_component(
+        tank,
+        Box2dColliderComponent { offset: Vec2::new(0.0, 0.0), size: Vec2::new(32.0, 32.0) },
+    );
     ecs.add_component(tank, TransformComponent(glam::Vec2::ZERO));
     ecs.add_component(tank, VelocityComponent(Vec2::new(0.0, 0.0)));
     ecs.add_component(
@@ -118,6 +122,10 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
     ecs.entity_manager_mut()
         .group_manager_mut()
         .add_entity_to_group(&truck, "enemy");
+    ecs.add_component(
+        truck,
+        Box2dColliderComponent { offset: Vec2::new(0.0, 0.0), size: Vec2::new(32.0, 32.0) },
+    );
     ecs.add_component(truck, TransformComponent(Vec2::new(100.0, 0.0)));
     ecs.add_component(truck, VelocityComponent(Vec2::new(-0.0, 0.0)));
     ecs.add_component(
@@ -141,6 +149,10 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
     ecs.entity_manager_mut()
         .tag_manager_mut()
         .set_tag(chopper, "player");
+    ecs.add_component(
+        chopper,
+        Box2dColliderComponent { offset: Vec2::new(0.0, 0.0), size: Vec2::new(32.0, 32.0) },
+    );
     ecs.add_component(chopper, TransformComponent(Vec2::new(0.0, 100.0)));
     ecs.add_component(chopper, VelocityComponent(Vec2::new(0.0, 0.0)));
     ecs.add_component(chopper, KeyboardControlComponent(100.0));

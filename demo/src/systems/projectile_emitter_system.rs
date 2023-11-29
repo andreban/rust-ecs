@@ -1,6 +1,6 @@
 use crate::components::{
-    CameraFollowComponent, ProjectileComponent, ProjectileEmitterComponent, SpriteComponent,
-    TransformComponent, VelocityComponent,
+    Box2dColliderComponent, CameraFollowComponent, ProjectileComponent, ProjectileEmitterComponent,
+    SpriteComponent, TransformComponent, VelocityComponent,
 };
 use crate::events::KeyboardEvent;
 use macroquad::prelude::KeyCode::Space;
@@ -73,6 +73,8 @@ impl EventListener for ProjectileEmitterSystem {
                     VelocityComponent(Vec2::new(0.0, -projectile_emitter.projectile_velocity.y))
                 }
             };
+            let projectile_box_2d_collider =
+                Box2dColliderComponent { offset: Vec2::new(0.0, 0.0), size: Vec2::new(4.0, 4.0) };
             let projectile_sprite =
                 SpriteComponent::new("bullet", Vec2::new(4.0, 4.0)).with_z_index(4);
             let projectile_duration = ProjectileComponent {
@@ -90,6 +92,7 @@ impl EventListener for ProjectileEmitterSystem {
             em.group_manager_mut()
                 .add_entity_to_group(&projectile, "projectile");
             em.add_component(projectile, projectile_transform);
+            em.add_component(projectile, projectile_box_2d_collider);
             em.add_component(projectile, projectile_velocity);
             em.add_component(projectile, projectile_sprite);
             em.add_component(projectile, projectile_duration);
@@ -143,6 +146,8 @@ impl System for ProjectileEmitterSystem {
                 transform.0.y + sprite.dst_size.y / 2.0,
             ));
             let projectile_velocity = VelocityComponent(projectile_emitter.projectile_velocity);
+            let projectile_box_2d_collider =
+                Box2dColliderComponent { offset: Vec2::new(0.0, 0.0), size: Vec2::new(4.0, 4.0) };
             let projectile_sprite =
                 SpriteComponent::new("bullet", Vec2::new(4.0, 4.0)).with_z_index(4);
             let projectile_duration = ProjectileComponent {
@@ -161,6 +166,7 @@ impl System for ProjectileEmitterSystem {
             em.group_manager_mut()
                 .add_entity_to_group(&projectile, "projectile");
             em.add_component(projectile, projectile_transform);
+            em.add_component(projectile, projectile_box_2d_collider);
             em.add_component(projectile, projectile_velocity);
             em.add_component(projectile, projectile_sprite);
             em.add_component(projectile, projectile_duration);

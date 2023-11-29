@@ -11,7 +11,7 @@ use rust_ecs::{
 };
 
 use crate::{
-    components::{SpriteComponent, TransformComponent, VelocityComponent},
+    components::{Box2dColliderComponent, TransformComponent},
     events::CollisionEvent,
 };
 
@@ -23,9 +23,8 @@ pub struct CollisionSystem {
 impl Default for CollisionSystem {
     fn default() -> Self {
         let mut signature = ComponentSignature::default();
-        signature.require_component::<SpriteComponent>();
         signature.require_component::<TransformComponent>();
-        signature.require_component::<VelocityComponent>();
+        signature.require_component::<Box2dColliderComponent>();
         Self { signature, entities: Default::default() }
     }
 }
@@ -59,16 +58,20 @@ impl System for CollisionSystem {
                 let collided = {
                     let em: Ref<'_, EntityManager> = entity_manager.borrow();
                     let transform_a = em.get_component::<TransformComponent>(**entity_a).unwrap();
-                    let sprite_a = em.get_component::<SpriteComponent>(**entity_a).unwrap();
+                    let box_a = em
+                        .get_component::<Box2dColliderComponent>(**entity_a)
+                        .unwrap();
                     let transform_b = em.get_component::<TransformComponent>(**entity_b).unwrap();
-                    let sprite_b = em.get_component::<SpriteComponent>(**entity_b).unwrap();
+                    let box_b = em
+                        .get_component::<Box2dColliderComponent>(**entity_b)
+                        .unwrap();
 
                     let a = transform_a.0;
                     let b = transform_b.0;
-                    let a_width = sprite_a.dst_size.x as f32;
-                    let a_height = sprite_a.dst_size.y as f32;
-                    let b_width = sprite_b.dst_size.x as f32;
-                    let b_height = sprite_b.dst_size.y as f32;
+                    let a_width = box_a.size.x;
+                    let a_height = box_a.size.y;
+                    let b_width = box_b.size.x;
+                    let b_height = box_b.size.y;
 
                     a.x < b.x + b_width
                         && a.x + a_width > b.x
