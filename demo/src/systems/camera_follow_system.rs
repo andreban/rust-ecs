@@ -51,9 +51,11 @@ impl System for CameraFollowSystem {
         let map_dimensions = res.get::<MapDimensions>().unwrap().0;
         let camera = res.get_mut::<Camera>().unwrap();
 
-        let entity = *self.entities.iter().next().unwrap();
+        let Some(entity) = self.entities.iter().next() else {
+            return;
+        };
 
-        let transform = em.get_component::<TransformComponent>(entity).unwrap();
+        let transform = em.get_component::<TransformComponent>(*entity).unwrap();
 
         camera.0 = {
             let camera_left = (transform.0.x - camera.0.w / 2.0)

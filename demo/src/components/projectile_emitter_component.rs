@@ -8,4 +8,6 @@ pub struct ProjectileEmitterComponent {
     pub repeat_interval: Option<Duration>,
     pub last_emitted: SystemTime,
     pub projectile_duration: Duration,
+    pub damage: u32,
+    pub friendly: bool,
 }

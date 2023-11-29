@@ -78,6 +78,8 @@ impl EventListener for ProjectileEmitterSystem {
             let projectile_duration = ProjectileComponent {
                 max_duration: projectile_emitter.projectile_duration,
                 created: SystemTime::now(),
+                damage: projectile_emitter.damage,
+                friendly: projectile_emitter.friendly,
             };
             drop(transform);
             drop(projectile_emitter);
@@ -85,6 +87,8 @@ impl EventListener for ProjectileEmitterSystem {
             drop(sprite);
 
             let projectile = em.create_entity();
+            em.group_manager_mut()
+                .add_entity_to_group(&projectile, "projectile");
             em.add_component(projectile, projectile_transform);
             em.add_component(projectile, projectile_velocity);
             em.add_component(projectile, projectile_sprite);
@@ -144,6 +148,8 @@ impl System for ProjectileEmitterSystem {
             let projectile_duration = ProjectileComponent {
                 max_duration: projectile_emitter.projectile_duration,
                 created: SystemTime::now(),
+                damage: projectile_emitter.damage,
+                friendly: projectile_emitter.friendly,
             };
             projectile_emitter.last_emitted = SystemTime::now();
 
@@ -152,6 +158,8 @@ impl System for ProjectileEmitterSystem {
             drop(projectile_emitter);
 
             let projectile = em.create_entity();
+            em.group_manager_mut()
+                .add_entity_to_group(&projectile, "projectile");
             em.add_component(projectile, projectile_transform);
             em.add_component(projectile, projectile_velocity);
             em.add_component(projectile, projectile_sprite);

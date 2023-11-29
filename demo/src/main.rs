@@ -13,8 +13,8 @@ use std::{
 };
 
 use components::{
-    AnimationComponent, CameraFollowComponent, KeyboardControlComponent, SpriteComponent,
-    TransformComponent, VelocityComponent,
+    AnimationComponent, CameraFollowComponent, HealthComponent, KeyboardControlComponent,
+    SpriteComponent, TransformComponent, VelocityComponent,
 };
 use events::KeyboardEvent;
 use macroquad::prelude::*;
@@ -108,8 +108,11 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
             projectile_velocity: Vec2::new(150.0, 0.0),
             last_emitted: SystemTime::now(),
             projectile_duration: Duration::from_secs(5),
+            damage: 10,
+            friendly: false,
         },
     );
+    ecs.add_component(tank, HealthComponent { health: 100 });
 
     let truck = ecs.create_entity();
     ecs.entity_manager_mut()
@@ -128,8 +131,11 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
             projectile_velocity: Vec2::new(0.0, 150.0),
             last_emitted: SystemTime::now(),
             projectile_duration: Duration::from_secs(5),
+            damage: 10,
+            friendly: false,
         },
     );
+    ecs.add_component(truck, HealthComponent { health: 100 });
 
     let chopper = ecs.create_entity();
     ecs.entity_manager_mut()
@@ -159,8 +165,11 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
             projectile_velocity: Vec2::new(150.0, 150.0),
             last_emitted: SystemTime::now(),
             projectile_duration: Duration::from_secs(5),
+            damage: 10,
+            friendly: true,
         },
     );
+    ecs.add_component(chopper, HealthComponent { health: 100 });
 
     let window_conf = window_conf();
     let camera = Camera(Rect::new(

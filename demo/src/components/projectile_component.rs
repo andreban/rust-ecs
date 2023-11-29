@@ -5,4 +5,6 @@ use std::time::{Duration, SystemTime};
 pub struct ProjectileComponent {
     pub max_duration: Duration,
     pub created: SystemTime,
+    pub damage: u32,
+    pub friendly: bool,
 }
