@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 rust-ecs = { path = "../"}
-macroquad = "0.4.4"
+macroquad = "0.4.13"
