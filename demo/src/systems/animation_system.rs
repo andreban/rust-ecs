@@ -36,18 +36,25 @@ impl System for AnimationSystem {
         &self,
         _delta_time: std::time::Duration,
         _asset_manager: &rust_ecs::AssetManager,
-        entity_manager: std::rc::Rc<std::cell::RefCell<rust_ecs::EntityManager>>,
+        entity_manager: rust_ecs::EntityManager,
         _event_bus: std::rc::Rc<std::cell::RefCell<rust_ecs::events::EventBus>>,
         _resources: std::rc::Rc<std::cell::RefCell<rust_ecs::Resources>>,
     ) {
         for entity in &self.entities {
-            let em = entity_manager.borrow_mut();
-            let mut sprite = em.get_component_mut::<SpriteComponent>(*entity).unwrap();
-            let mut animation = em.get_component_mut::<AnimationComponent>(*entity).unwrap();
+            let sprite = entity_manager
+                .get_component::<SpriteComponent>(entity)
+                .unwrap();
+            let animation = entity_manager
+                .get_component::<AnimationComponent>(entity)
+                .unwrap();
             let time = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
                 .as_millis() as usize;
+
+            let mut sprite = sprite.borrow_mut();
+            let mut animation = animation.borrow_mut();
+
             animation.current_frame =
                 ((time - animation.start_time) * animation.framerate / 1000) % animation.num_frames;
 

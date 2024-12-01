@@ -23,7 +23,7 @@ impl Event {
 }
 
 pub trait EventListener {
-    fn on_event(&self, _em: Rc<RefCell<EntityManager>>, _event: &Event) {}
+    fn on_event(&self, _em: EntityManager, _event: &Event) {}
 }
 
 #[derive(Default)]
@@ -37,7 +37,7 @@ impl EventBus {
         listeners.push(listener);
     }
 
-    pub fn emit<T: Clone + 'static>(&self, em: Rc<RefCell<EntityManager>>, data: T) {
+    pub fn emit<T: Clone + 'static>(&self, em: EntityManager, data: T) {
         let type_id = TypeId::of::<T>();
         if let Some(listeners) = self.listeners.get(&type_id) {
             let event = Event::new(data);

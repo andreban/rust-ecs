@@ -46,11 +46,10 @@ impl System for RenderSystem {
         &self,
         _delta_time: std::time::Duration,
         asset_manager: &rust_ecs::AssetManager,
-        entity_manager: Rc<RefCell<EntityManager>>,
+        entity_manager: EntityManager,
         _event_bus: Rc<RefCell<EventBus>>,
         resources: std::rc::Rc<std::cell::RefCell<rust_ecs::Resources>>,
     ) {
-        let em = entity_manager.borrow();
         let res = resources.borrow();
         let camera = res.get::<Camera>().unwrap();
 
@@ -58,14 +57,16 @@ impl System for RenderSystem {
             .entities
             .iter()
             .map(|entity| {
-                let transform = em.get_component::<TransformComponent>(*entity).unwrap();
-                let sprite = em.get_component::<SpriteComponent>(*entity).unwrap();
+                let transform = entity_manager.get_component::<TransformComponent>(entity).unwrap();
+                let sprite = entity_manager.get_component::<SpriteComponent>(entity).unwrap();
                 (transform, sprite)
             })
             .collect::<Vec<_>>();
-        entities.sort_by_key(|(_, sprite)| sprite.z_index);
+        entities.sort_by_key(|(_, sprite)| sprite.borrow().z_index);
 
         for (transform, sprite) in entities {
+            let transform = transform.borrow();
+            let sprite = sprite.borrow();
             let texture = asset_manager.get_texture(&sprite.sprite_name).unwrap();
             draw_texture_ex(
                 texture,

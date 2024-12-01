@@ -9,7 +9,8 @@ use rust_ecs::events::{Event, EventBus, EventListener};
 use rust_ecs::systems::System;
 use rust_ecs::{AssetManager, ComponentSignature, Entity, EntityManager, Resources};
 use std::any::TypeId;
-use std::cell::RefCell;
+use std::borrow::BorrowMut;
+use std::cell::{RefCell, RefMut};
 use std::collections::HashSet;
 use std::rc::Rc;
 use std::time::{Duration, SystemTime};
@@ -32,14 +33,13 @@ impl Default for ProjectileEmitterSystem {
 }
 
 impl EventListener for ProjectileEmitterSystem {
-    fn on_event(&self, entity_manager: Rc<RefCell<EntityManager>>, event: &Event) {
+    fn on_event(&self, entity_manager: EntityManager, event: &Event) {
         if event.get_data::<KeyboardEvent>().unwrap().0 != Space {
             return;
         }
         for entity in &self.entities {
             let is_player = {
-                let em = entity_manager.borrow();
-                let is_player = match em.get_component::<CameraFollowComponent>(*entity) {
+                let is_player = match entity_manager.get_component::<CameraFollowComponent>(entity) {
                     Some(_) => true,
                     None => false,
                 };
@@ -50,13 +50,17 @@ impl EventListener for ProjectileEmitterSystem {
                 continue;
             }
 
-            let mut em = entity_manager.borrow_mut();
-            let projectile_emitter = em
-                .get_component_mut::<ProjectileEmitterComponent>(*entity)
-                .unwrap();
-            let transform = em.get_component::<TransformComponent>(*entity).unwrap();
-            let velocity = em.get_component::<VelocityComponent>(*entity).unwrap();
-            let sprite = em.get_component::<SpriteComponent>(*entity).unwrap();
+            let projectile_emitter = entity_manager
+                .get_component::<ProjectileEmitterComponent>(entity).unwrap();
+            let transform = entity_manager.get_component::<TransformComponent>(entity).unwrap();
+            let velocity = entity_manager.get_component::<VelocityComponent>(entity).unwrap();
+            let sprite = entity_manager.get_component::<SpriteComponent>(entity).unwrap();
+
+            let projectile_emitter = projectile_emitter.borrow();
+            let transform = transform.borrow();
+            let velocity = velocity.borrow();
+            let sprite = sprite.borrow();
+
 
             let projectile_transform = TransformComponent(Vec2::new(
                 transform.0.x + sprite.dst_size.x / 2.0,
@@ -88,14 +92,15 @@ impl EventListener for ProjectileEmitterSystem {
             drop(velocity);
             drop(sprite);
 
-            let projectile = em.create_entity();
-            em.group_manager_mut()
+            let projectile = entity_manager.create_entity();
+            entity_manager.group_manager()
+                .borrow_mut()
                 .add_entity_to_group(&projectile, "projectile");
-            em.add_component(projectile, projectile_transform);
-            em.add_component(projectile, projectile_box_2d_collider);
-            em.add_component(projectile, projectile_velocity);
-            em.add_component(projectile, projectile_sprite);
-            em.add_component(projectile, projectile_duration);
+            entity_manager.add_component(projectile, projectile_transform);
+            entity_manager.add_component(projectile, projectile_box_2d_collider);
+            entity_manager.add_component(projectile, projectile_velocity);
+            entity_manager.add_component(projectile, projectile_sprite);
+            entity_manager.add_component(projectile, projectile_duration);
         }
     }
 }
@@ -121,17 +126,20 @@ impl System for ProjectileEmitterSystem {
         &self,
         _delta_time: Duration,
         _asset_manager: &AssetManager,
-        entity_manager: Rc<RefCell<EntityManager>>,
+        entity_manager: EntityManager,
         _event_bus: Rc<RefCell<EventBus>>,
         _resources: Rc<RefCell<Resources>>,
     ) {
-        let mut em = entity_manager.borrow_mut();
         for entity in &self.entities {
-            let mut projectile_emitter = em
-                .get_component_mut::<ProjectileEmitterComponent>(*entity)
+            let projectile_emitter = entity_manager
+                .get_component::<ProjectileEmitterComponent>(entity)
                 .unwrap();
-            let transform = em.get_component::<TransformComponent>(*entity).unwrap();
-            let sprite = em.get_component::<SpriteComponent>(*entity).unwrap();
+            let transform = entity_manager.get_component::<TransformComponent>(entity).unwrap();
+            let sprite = entity_manager.get_component::<SpriteComponent>(entity).unwrap();
+
+            let mut projectile_emitter: RefMut<'_, Box<ProjectileEmitterComponent>> = projectile_emitter.try_borrow_mut().unwrap();
+            let transform = transform.borrow();
+            let sprite = sprite.borrow();
 
             let Some(interval) = projectile_emitter.repeat_interval else {
                 continue;
@@ -162,14 +170,15 @@ impl System for ProjectileEmitterSystem {
             drop(transform);
             drop(projectile_emitter);
 
-            let projectile = em.create_entity();
-            em.group_manager_mut()
+            let projectile = entity_manager.create_entity();
+            entity_manager.group_manager()
+                .borrow_mut()
                 .add_entity_to_group(&projectile, "projectile");
-            em.add_component(projectile, projectile_transform);
-            em.add_component(projectile, projectile_box_2d_collider);
-            em.add_component(projectile, projectile_velocity);
-            em.add_component(projectile, projectile_sprite);
-            em.add_component(projectile, projectile_duration);
+            entity_manager.add_component(projectile, projectile_transform);
+            entity_manager.add_component(projectile, projectile_box_2d_collider);
+            entity_manager.add_component(projectile, projectile_velocity);
+            entity_manager.add_component(projectile, projectile_sprite);
+            entity_manager.add_component(projectile, projectile_duration);
         }
     }
 }

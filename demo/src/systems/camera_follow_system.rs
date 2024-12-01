@@ -41,11 +41,10 @@ impl System for CameraFollowSystem {
         &self,
         _delta_time: std::time::Duration,
         _asset_manager: &rust_ecs::AssetManager,
-        entity_manager: std::rc::Rc<std::cell::RefCell<rust_ecs::EntityManager>>,
+        entity_manager: rust_ecs::EntityManager,
         _event_bus: std::rc::Rc<std::cell::RefCell<rust_ecs::events::EventBus>>,
         resources: std::rc::Rc<std::cell::RefCell<rust_ecs::Resources>>,
     ) {
-        let em = entity_manager.borrow();
         let mut res = resources.borrow_mut();
 
         let map_dimensions = res.get::<MapDimensions>().unwrap().0;
@@ -55,7 +54,11 @@ impl System for CameraFollowSystem {
             return;
         };
 
-        let transform = em.get_component::<TransformComponent>(*entity).unwrap();
+        let transform = entity_manager
+            .get_component::<TransformComponent>(entity)
+            .unwrap();
+
+        let transform = transform.borrow();
 
         camera.0 = {
             let camera_left = (transform.0.x - camera.0.w / 2.0)

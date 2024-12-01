@@ -1,5 +1,5 @@
 use std::{
-    cell::{Ref, RefCell},
+    cell::RefCell,
     collections::HashSet,
     rc::Rc,
 };
@@ -48,7 +48,7 @@ impl System for CollisionSystem {
         &self,
         _delta_time: std::time::Duration,
         _asset_manager: &rust_ecs::AssetManager,
-        entity_manager: Rc<RefCell<EntityManager>>,
+        em: EntityManager,
         event_bus: Rc<RefCell<EventBus>>,
         _resources: std::rc::Rc<std::cell::RefCell<rust_ecs::Resources>>,
     ) {
@@ -56,15 +56,23 @@ impl System for CollisionSystem {
         for (i, entity_a) in entities.iter().enumerate() {
             for entity_b in &entities[i + 1..] {
                 let collided = {
-                    let em: Ref<'_, EntityManager> = entity_manager.borrow();
-                    let transform_a = em.get_component::<TransformComponent>(**entity_a).unwrap();
+                    let transform_a = em
+                        .get_component::<TransformComponent>(entity_a)
+                        .unwrap();
                     let box_a = em
-                        .get_component::<Box2dColliderComponent>(**entity_a)
+                        .get_component::<Box2dColliderComponent>(entity_a)
                         .unwrap();
-                    let transform_b = em.get_component::<TransformComponent>(**entity_b).unwrap();
+                    let transform_b = em
+                        .get_component::<TransformComponent>(entity_b)
+                        .unwrap();
                     let box_b = em
-                        .get_component::<Box2dColliderComponent>(**entity_b)
+                        .get_component::<Box2dColliderComponent>(entity_b)
                         .unwrap();
+
+                    let transform_a = transform_a.borrow();
+                    let box_a = box_a.borrow();
+                    let transform_b = transform_b.borrow();
+                    let box_b = box_b.borrow();
 
                     let a = transform_a.0;
                     let b = transform_b.0;
@@ -81,7 +89,7 @@ impl System for CollisionSystem {
 
                 if collided {
                     event_bus.borrow_mut().emit(
-                        entity_manager.clone(),
+                        em.clone(),
                         CollisionEvent { entity_a: **entity_a, entity_b: **entity_b },
                     );
                 }

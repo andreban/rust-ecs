@@ -66,6 +66,8 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
     ecs.add_system(systems::ProjectileEmitterSystem::default());
     ecs.add_system(systems::ProjectileLifecycleSystem::default());
 
+    tracing::info!("Added Systems");
+
     let tiles = load_map("assets/tilemaps/jungle.map").unwrap();
     let tile_scale = 2;
     for tile in tiles {
@@ -76,9 +78,7 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
         let tile_src_x = (tile.sprite_id % 10 * 32) as f32;
 
         let entity = ecs.create_entity();
-        ecs.entity_manager_mut()
-            .group_manager_mut()
-            .add_entity_to_group(&entity, "tile");
+        ecs.entity_manager().add_entity_to_group(&entity, "tile");
         ecs.add_component(entity, TransformComponent(Vec2::new(tile_x, tile_y)));
         ecs.add_component(
             entity,
@@ -92,9 +92,7 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
 
     // Create entities with components.
     let tank = ecs.create_entity();
-    ecs.entity_manager_mut()
-        .group_manager_mut()
-        .add_entity_to_group(&tank, "enemy");
+    ecs.entity_manager().add_entity_to_group(&tank, "enemy");
     ecs.add_component(
         tank,
         Box2dColliderComponent { offset: Vec2::new(0.0, 0.0), size: Vec2::new(32.0, 32.0) },
@@ -119,9 +117,7 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
     ecs.add_component(tank, HealthComponent { health: 100 });
 
     let truck = ecs.create_entity();
-    ecs.entity_manager_mut()
-        .group_manager_mut()
-        .add_entity_to_group(&truck, "enemy");
+    ecs.entity_manager().add_entity_to_group(&truck, "enemy");
     ecs.add_component(
         truck,
         Box2dColliderComponent { offset: Vec2::new(0.0, 0.0), size: Vec2::new(32.0, 32.0) },
@@ -146,9 +142,7 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
     ecs.add_component(truck, HealthComponent { health: 100 });
 
     let chopper = ecs.create_entity();
-    ecs.entity_manager_mut()
-        .tag_manager_mut()
-        .set_tag(chopper, "player");
+    ecs.entity_manager().set_tag(chopper, "player");
     ecs.add_component(
         chopper,
         Box2dColliderComponent { offset: Vec2::new(0.0, 0.0), size: Vec2::new(32.0, 32.0) },
@@ -183,6 +177,8 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
     );
     ecs.add_component(chopper, HealthComponent { health: 100 });
 
+    tracing::info!("Added Entities");
+
     let window_conf = window_conf();
     let camera = Camera(Rect::new(
         0.0,
@@ -196,35 +192,37 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
     ecs.resources_mut().put::<MapDimensions>(map_dimensions);
 }
 
-fn handle_keyboard_events(
-    entity_manager: Rc<RefCell<EntityManager>>,
-    event_bus: Rc<RefCell<EventBus>>,
-) {
-    if is_key_pressed(KeyCode::Up) {
+fn handle_keyboard_events(entity_manager: EntityManager, event_bus: Rc<RefCell<EventBus>>) {
+    if is_key_down(KeyCode::Up) {
+        tracing::info!("Up key pressed");
         event_bus
             .borrow()
             .emit(entity_manager.clone(), KeyboardEvent(KeyCode::Up));
     }
 
-    if is_key_pressed(KeyCode::Right) {
+    if is_key_down(KeyCode::Right) {
+        tracing::info!("Right key pressed");
         event_bus
             .borrow()
             .emit(entity_manager.clone(), KeyboardEvent(KeyCode::Right));
     }
 
     if is_key_pressed(KeyCode::Down) {
+        tracing::info!("Down key pressed");
         event_bus
             .borrow()
             .emit(entity_manager.clone(), KeyboardEvent(KeyCode::Down));
     }
 
     if is_key_pressed(KeyCode::Left) {
+        tracing::info!("Left key pressed");
         event_bus
             .borrow()
             .emit(entity_manager.clone(), KeyboardEvent(KeyCode::Left));
     }
 
     if is_key_pressed(KeyCode::Space) {
+        tracing::info!("Space key pressed");
         event_bus
             .borrow()
             .emit(entity_manager.clone(), KeyboardEvent(KeyCode::Space));
@@ -233,6 +231,7 @@ fn handle_keyboard_events(
 
 #[macroquad::main(window_conf)]
 async fn main() {
+    tracing_subscriber::fmt::init();
     let mut ecs = EntityComponentSystem::new();
     let rate = 1000 / 60;
 
@@ -247,7 +246,7 @@ async fn main() {
             continue;
         }
 
-        handle_keyboard_events(ecs.entity_manager_cloned(), ecs.event_bus_cloned());
+        handle_keyboard_events(ecs.entity_manager(), ecs.event_bus_cloned());
 
         clear_background(BLACK);
         ecs.update(time.elapsed());

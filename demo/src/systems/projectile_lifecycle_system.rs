@@ -40,15 +40,15 @@ impl System for ProjectileLifecycleSystem {
         &self,
         _delta_time: Duration,
         _asset_manager: &AssetManager,
-        entity_manager: Rc<RefCell<EntityManager>>,
+        entity_manager: EntityManager,
         _event_bus: Rc<RefCell<EventBus>>,
         _resources: Rc<RefCell<Resources>>,
     ) {
-        let mut em = entity_manager.borrow_mut();
         for entity in &self.entities {
             let expired = {
                 let projectile_component =
-                    em.get_component::<ProjectileComponent>(*entity).unwrap();
+                    entity_manager.get_component::<ProjectileComponent>(entity).unwrap();
+                let projectile_component = projectile_component.borrow();
                 if projectile_component.created.elapsed().unwrap()
                     >= projectile_component.max_duration
                 {
@@ -58,7 +58,7 @@ impl System for ProjectileLifecycleSystem {
                 }
             };
             if expired {
-                em.destroy_entity(*entity);
+                entity_manager.destroy_entity(*entity);
             }
         }
     }

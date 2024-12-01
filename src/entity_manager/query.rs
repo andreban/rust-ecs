@@ -10,8 +10,8 @@ use crate::component_signature::ComponentSignature;
 use super::{component::Component, EntityId, EntityManager};
 
 pub struct Query<'a, T> {
-    phantom: PhantomData<T>,
-    em: &'a EntityManager,
+    pub(crate) phantom: PhantomData<T>,
+    pub(crate) em: &'a EntityManager,
 }
 
 impl<'a, T> Query<'a, T> {
@@ -26,7 +26,7 @@ impl<'a, A: Component + 'static> Query<'a, Ref<'a, A>> {
         let component_id = &A::get_type_id();
 
         // Get the components from the list. Return an empty vector if the list is empty.
-        let Some(components) = self.em.components.get(component_id) else {
+        let Some(components) = self.em.inner.borrow().components.get(component_id) else {
             return vec![];
         };
 

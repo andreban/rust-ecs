@@ -43,14 +43,16 @@ impl System for MovementSystem {
         &self,
         delta_time: std::time::Duration,
         _asset_manager: &rust_ecs::AssetManager,
-        entity_manager: Rc<RefCell<EntityManager>>,
+        entity_manager: EntityManager,
         _event_bus: Rc<RefCell<EventBus>>,
         _resources: std::rc::Rc<std::cell::RefCell<rust_ecs::Resources>>,
     ) {
         for entity in &self.entities {
-            let em = entity_manager.borrow_mut();
-            let mut transform = em.get_component_mut::<TransformComponent>(*entity).unwrap();
-            let velocity = em.get_component::<VelocityComponent>(*entity).unwrap();
+            let transform = entity_manager.get_component::<TransformComponent>(entity).unwrap();
+            let velocity = entity_manager.get_component::<VelocityComponent>(entity).unwrap();
+
+            let mut transform = transform.borrow_mut();
+            let velocity = velocity.borrow();
             transform.0 += velocity.0 * delta_time.as_secs_f32();
         }
     }

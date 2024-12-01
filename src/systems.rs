@@ -18,7 +18,7 @@ pub trait System: EventListener {
         &self,
         _delta_time: Duration,
         _asset_manager: &AssetManager,
-        _entity_manager: Rc<RefCell<EntityManager>>,
+        _entity_manager: EntityManager,
         _event_bus: Rc<RefCell<EventBus>>,
         _resources: Rc<RefCell<Resources>>,
     ) {

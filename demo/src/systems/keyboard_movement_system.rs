@@ -3,9 +3,7 @@ use rust_ecs::events::EventListener;
 use rust_ecs::systems::System;
 use rust_ecs::{ComponentSignature, Entity, EntityManager};
 use std::any::TypeId;
-use std::cell::RefCell;
 use std::collections::HashSet;
-use std::rc::Rc;
 
 use crate::components::SpriteComponent;
 use crate::{
@@ -49,14 +47,18 @@ impl System for KeyboardMovementSystem {
 }
 
 impl EventListener for KeyboardMovementSystem {
-    fn on_event(&self, em: Rc<RefCell<EntityManager>>, event: &rust_ecs::events::Event) {
+    fn on_event(&self, em: EntityManager, event: &rust_ecs::events::Event) {
         for entity in &self.entities {
-            let em = em.borrow();
-            let mut velocity = em.get_component_mut::<VelocityComponent>(*entity).unwrap();
-            let mut sprite = em.get_component_mut::<SpriteComponent>(*entity).unwrap();
+            let velocity = em.get_component::<VelocityComponent>(entity).unwrap();
+            let sprite = em.get_component::<SpriteComponent>(entity).unwrap();
             let keyboard_control = em
-                .get_component::<KeyboardControlComponent>(*entity)
+                .get_component::<KeyboardControlComponent>(entity)
                 .unwrap();
+
+            let mut velocity = velocity.borrow_mut();
+            let mut sprite = sprite.borrow_mut();
+            let keyboard_control = keyboard_control.borrow();
+            
             match event.get_data::<KeyboardEvent>().unwrap().0 {
                 KeyCode::Up => {
                     velocity.0 = Vec2::new(0.0, -keyboard_control.0);

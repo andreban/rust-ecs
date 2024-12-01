@@ -1,9 +1,4 @@
-use std::{
-    any::TypeId,
-    cell::{RefCell, RefMut},
-    collections::HashSet,
-    rc::Rc,
-};
+use std::{any::TypeId, collections::HashSet};
 
 use rust_ecs::{events::EventListener, systems::System, ComponentSignature, Entity, EntityManager};
 
@@ -45,12 +40,20 @@ impl System for DamageSystem {
 
 impl DamageSystem {
     fn on_player_projectile_collision(
-        em: &mut RefMut<EntityManager>,
+        em: EntityManager,
         player: Entity,
         projectile: Entity,
     ) {
-        let mut health_component = em.get_component_mut::<HealthComponent>(player).unwrap();
-        let projectile_component = em.get_component::<ProjectileComponent>(projectile).unwrap();
+        let health_component = em
+            .get_component::<HealthComponent>(&player)
+            .unwrap();
+        let projectile_component = em
+            .get_component::<ProjectileComponent>(&projectile)
+            .unwrap();
+
+        let mut health_component = health_component.borrow_mut();
+        let projectile_component = projectile_component.borrow();
+
         if projectile_component.friendly {
             return;
         }
@@ -69,12 +72,20 @@ impl DamageSystem {
     }
 
     fn on_enemy_projectile_collision(
-        em: &mut RefMut<EntityManager>,
+        em: EntityManager,
         enemy: Entity,
         projectile: Entity,
     ) {
-        let mut health_component = em.get_component_mut::<HealthComponent>(enemy).unwrap();
-        let projectile_component = em.get_component::<ProjectileComponent>(projectile).unwrap();
+        let health_component = em
+            .get_component::<HealthComponent>(&enemy)
+            .unwrap();
+        let projectile_component = em
+            .get_component::<ProjectileComponent>(&projectile)
+            .unwrap();
+
+        let mut health_component = health_component.borrow_mut();
+        let projectile_component = projectile_component.borrow();
+
         if !projectile_component.friendly {
             return;
         }
@@ -92,35 +103,33 @@ impl DamageSystem {
     }
 }
 impl EventListener for DamageSystem {
-    fn on_event(&self, em: Rc<RefCell<EntityManager>>, event: &rust_ecs::events::Event) {
+    fn on_event(&self, em: EntityManager, event: &rust_ecs::events::Event) {
         let event = event.get_data::<CollisionEvent>().unwrap();
         let entity_a = event.entity_a;
         let entity_b = event.entity_b;
 
-        let mut em = em.borrow_mut();
-
         if em.tag_manager().has_tag(entity_a, "player")
             && em.group_manager().entity_in_group(&entity_b, "projectile")
         {
-            DamageSystem::on_player_projectile_collision(&mut em, entity_a, entity_b);
+            DamageSystem::on_player_projectile_collision(em.clone(), entity_a, entity_b);
         }
 
         if em.tag_manager().has_tag(entity_b, "player")
             && em.group_manager().entity_in_group(&entity_a, "projectile")
         {
-            DamageSystem::on_player_projectile_collision(&mut em, entity_b, entity_a);
+            DamageSystem::on_player_projectile_collision(em.clone(), entity_b, entity_a);
         }
 
         if em.group_manager().entity_in_group(&entity_a, "enemy")
             && em.group_manager().entity_in_group(&entity_b, "projectile")
         {
-            DamageSystem::on_enemy_projectile_collision(&mut em, entity_a, entity_b);
+            DamageSystem::on_enemy_projectile_collision(em.clone(), entity_a, entity_b);
         }
 
         if em.group_manager().entity_in_group(&entity_b, "enemy")
             && em.group_manager().entity_in_group(&entity_a, "projectile")
         {
-            DamageSystem::on_enemy_projectile_collision(&mut em, entity_b, entity_a);
+            DamageSystem::on_enemy_projectile_collision(em.clone(), entity_b, entity_a);
         }
     }
 }

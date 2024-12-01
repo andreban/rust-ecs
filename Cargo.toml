@@ -10,3 +10,4 @@ macroquad = "0.4.13"
 fixedbitset = "0.5.7"
 glam = "0.29.2"
 macros = { path = "macros" }
+tracing = "0.1.41"
