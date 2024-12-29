@@ -10,7 +10,7 @@ pub type ComponentTypeId = usize;
 /// `macros/src/lib.rs` for more information.
 pub fn get_next_component_type_id() -> usize {
     static NEXT_TYPE_ID: AtomicUsize = AtomicUsize::new(0);
-    NEXT_TYPE_ID.fetch_add(1, Ordering::SeqCst)
+    NEXT_TYPE_ID.fetch_add(1, Ordering::Relaxed)
 }
 
 pub trait Component {

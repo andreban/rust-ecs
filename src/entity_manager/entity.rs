@@ -1,8 +1,10 @@
+use std::sync::atomic::{AtomicUsize, Ordering};
+
 pub type EntityId = usize;
 
 pub(super) fn get_next_entity_id() -> usize {
-    static NEXT_ENTITY_ID: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
-    NEXT_ENTITY_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst)
+    static NEXT_ENTITY_ID: AtomicUsize = AtomicUsize::new(0);
+    NEXT_ENTITY_ID.fetch_add(1, Ordering::Relaxed)
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
