@@ -170,7 +170,7 @@ impl EntityManagerInner {
         }
     }
 
-    pub fn query<C: Component + 'static>(&self) -> Vec<Ref<C>> {
+    pub fn query<C: Component + 'static>(&self) -> Vec<Ref<'_, C>> {
         let component_type_id = C::get_type_id();
         let components = self.components.get(&component_type_id).unwrap();
         components

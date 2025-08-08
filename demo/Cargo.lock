@@ -9,15 +9,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f26201604c87b1e01bd3d98f8d5d9a8fcbb815e8cedb41ffccbeb4bf593a35fe"
 
 [[package]]
-name = "ahash"
-version = "0.8.3"
+name = "allocator-api2"
+version = "0.2.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c99f64d1e06488f620f932677e24bc6e2897582980441ae90a671415bd7ec2f"
-dependencies = [
- "cfg-if",
- "once_cell",
- "version_check",
-]
+checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
 name = "autocfg"
@@ -65,6 +60,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "equivalent"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
+
+[[package]]
 name = "fdeflate"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -90,10 +91,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "fontdue"
-version = "0.7.3"
+name = "foldhash"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0793f5137567643cf65ea42043a538804ff0fbf288649e2141442b602d81f9bc"
+checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
+
+[[package]]
+name = "fontdue"
+version = "0.9.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e57e16b3fe8ff4364c0661fdaac543fb38b29ea9bc9c2f45612d90adf931d2b"
 dependencies = [
  "hashbrown",
  "ttf-parser",
@@ -107,17 +114,19 @@ checksum = "9e05e7e6723e3455f4818c7b26e855439f7546cf617ef669d1adedb8669e5cb9"
 
 [[package]]
 name = "glam"
-version = "0.29.2"
+version = "0.30.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc46dd3ec48fdd8e693a98d2b8bafae273a2d54c1de02a2a7e3d57d501f39677"
+checksum = "f2d1aab06663bdce00d6ca5e5ed586ec8d18033a771906c993a1e3755b368d85"
 
 [[package]]
 name = "hashbrown"
-version = "0.13.2"
+version = "0.15.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43a3c133739dddd0d2990f9a4bdf8eb4b21ef50e4851ca85ab661199821d510e"
+checksum = "9229cfe53dfd69f0609a49f65461bd93001ea1ef889cd5529dd176593f5338a1"
 dependencies = [
- "ahash",
+ "allocator-api2",
+ "equivalent",
+ "foldhash",
 ]
 
 [[package]]
@@ -154,9 +163,9 @@ checksum = "a7a70ba024b9dc04c27ea2f0c0548feb474ec5c54bba33a7f72f873a39d07b24"
 
 [[package]]
 name = "macroquad"
-version = "0.4.13"
+version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81fef16b2d4de22ac372b5d7d76273c0ead0a31f9de9bc649af8f816816db8a8"
+checksum = "d2befbae373456143ef55aa93a73594d080adfb111dc32ec96a1123a3e4ff4ae"
 dependencies = [
  "fontdue",
  "glam 0.27.0",
@@ -164,7 +173,6 @@ dependencies = [
  "macroquad_macro",
  "miniquad",
  "quad-rand",
- "slotmap",
 ]
 
 [[package]]
@@ -192,13 +200,13 @@ dependencies = [
 
 [[package]]
 name = "miniquad"
-version = "0.4.6"
+version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2124e5e6bab86d96f263d78dc763c29e0da4c4f7ff0e1bb33f1d3905d1121262"
+checksum = "2fb3e758e46dbc45716a8a49ca9edc54b15bcca826277e80b1f690708f67f9e3"
 dependencies = [
  "libc",
  "ndk-sys",
- "objc",
+ "objc-rs",
  "winapi",
 ]
 
@@ -259,10 +267,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "objc"
-version = "0.2.7"
+name = "objc-rs"
+version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "915b1b472bc21c53464d6c8461c9d3af805ba1ef837e1cac254428f4a77177b1"
+checksum = "64a1e7069a2525126bf12a9f1f7916835fafade384fb27cabf698e745e2a1eb8"
 dependencies = [
  "malloc_buf",
 ]
@@ -309,9 +317,9 @@ dependencies = [
 
 [[package]]
 name = "quad-rand"
-version = "0.2.1"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "658fa1faf7a4cc5f057c9ee5ef560f717ad9d8dc66d975267f709624d6e1ab88"
+checksum = "5a651516ddc9168ebd67b24afd085a718be02f8858fe406591b013d101ce2f40"
 
 [[package]]
 name = "quote"
@@ -327,7 +335,7 @@ name = "rust-ecs"
 version = "0.1.0"
 dependencies = [
  "fixedbitset",
- "glam 0.29.2",
+ "glam 0.30.5",
  "macroquad",
  "macros",
  "tracing",
@@ -357,15 +365,6 @@ name = "simd-adler32"
 version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d66dc143e6b11c1eddc06d5c423cfc97062865baf299914ab64caa38182078fe"
-
-[[package]]
-name = "slotmap"
-version = "1.0.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1e08e261d0e8f5c43123b7adf3e4ca1690d655377ac93a03b2c9d3e98de1342"
-dependencies = [
- "version_check",
-]
 
 [[package]]
 name = "smallvec"
@@ -453,9 +452,9 @@ dependencies = [
 
 [[package]]
 name = "ttf-parser"
-version = "0.15.2"
+version = "0.21.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b3e06c9b9d80ed6b745c7159c40b311ad2916abb34a49e9be2653b90db0d8dd"
+checksum = "2c591d83f69777866b9126b24c6dd9a18351f177e49d625920d19f989fd31cf8"
 
 [[package]]
 name = "unicode-ident"
@@ -468,12 +467,6 @@ name = "valuable"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "830b7e5d4d90034032940e4ace0d9a9a057e7a45cd94e6c007832e39edb82f6d"
-
-[[package]]
-name = "version_check"
-version = "0.9.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "winapi"

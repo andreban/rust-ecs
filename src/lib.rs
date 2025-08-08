@@ -125,11 +125,11 @@ impl EntityComponentSystem {
         &mut self.asset_manager
     }
 
-    pub fn resources(&self) -> Ref<Resources> {
+    pub fn resources(&self) -> Ref<'_, Resources> {
         self.resources.borrow()
     }
 
-    pub fn resources_mut(&self) -> RefMut<Resources> {
+    pub fn resources_mut(&self) -> RefMut<'_, Resources> {
         self.resources.borrow_mut()
     }
 
