@@ -1,5 +1,30 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+#[cfg(test)]
+mod tests {
+    use super::Entity;
+
+    #[test]
+    fn entity_new_has_correct_id() {
+        let entity = Entity::new(5);
+        assert_eq!(entity.id(), 5);
+    }
+
+    #[test]
+    fn entity_copy() {
+        let entity = Entity::new(42);
+        let copy = entity;
+        assert_eq!(entity.id(), copy.id());
+    }
+
+    #[test]
+    fn entity_equality() {
+        let a = Entity::new(7);
+        let b = Entity::new(7);
+        assert_eq!(a, b);
+    }
+}
+
 /// Numeric identifier for a live entity, unique within a single ECS instance.
 pub type EntityId = usize;
 
