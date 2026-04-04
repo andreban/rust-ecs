@@ -18,9 +18,9 @@
 
 4. ~~**`src/lib.rs:75-80`** — Systems re-subscribe to the event bus on every frame (after `clear()` wipes listeners). This is wasteful. Subscribe once when a system is added via `add_system()`.~~ — **Fixed.** Moved subscription into `add_system()`; removed `clear()` + re-subscription loop from `update()`.
 
-5. **`src/entity_manager/query.rs:36,104,114`** — `RefCell::borrow()` panics at runtime if a mutable borrow is already held. No protection against double-borrow in system iteration.
+5. **`src/entity_manager/query.rs:36,104,114`** — `RefCell::borrow()` panics at runtime if a mutable borrow is already held. No protection against double-borrow in system iteration. *(Note: `query.rs` is currently excluded from compilation via `mod.rs`.)*
 
-6. **`demo/src/systems/projectile_lifecycle_system.rs:52`** — `SystemTime::elapsed().unwrap()` panics if the system clock goes backward.
+6. ~~**`demo/src/systems/projectile_lifecycle_system.rs:52`** — `SystemTime::elapsed().unwrap()` panics if the system clock goes backward.~~ — **Fixed.** Replaced `.unwrap()` on `elapsed()` with `.map_or(false, ...)` (clock regression → treat as not expired); replaced `.get_component(...).unwrap()` with `let Some(...) else { continue }`.
 
 ---
 

@@ -45,17 +45,17 @@ impl System for ProjectileLifecycleSystem {
         _resources: Rc<RefCell<Resources>>,
     ) {
         for entity in &self.entities {
+            let Some(projectile_component) =
+                entity_manager.get_component::<ProjectileComponent>(entity)
+            else {
+                continue;
+            };
             let expired = {
-                let projectile_component =
-                    entity_manager.get_component::<ProjectileComponent>(entity).unwrap();
                 let projectile_component = projectile_component.borrow();
-                if projectile_component.created.elapsed().unwrap()
-                    >= projectile_component.max_duration
-                {
-                    true
-                } else {
-                    false
-                }
+                projectile_component
+                    .created
+                    .elapsed()
+                    .map_or(false, |elapsed| elapsed >= projectile_component.max_duration)
             };
             if expired {
                 entity_manager.destroy_entity(*entity);
