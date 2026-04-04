@@ -12,5 +12,11 @@ glam = "0.30.5"
 macros = { path = "macros" }
 tracing = "0.1.41"
 
+[dev-dependencies]
+tracing-subscriber = "0.3.20"
+
+[[example]]
+name = "demo"
+
 [patch.crates-io]
 miniquad = { git = "https://github.com/andreban/miniquad.git", branch = "fix/windows-aarch64-input" }

@@ -23,6 +23,8 @@ use resources::{Camera, MapDimensions};
 use rust_ecs::{events::EventBus, EntityComponentSystem, EntityManager};
 use tilemap::load_map;
 
+const ASSETS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/examples/demo/assets");
+
 fn window_conf() -> Conf {
     Conf { window_title: "Demo".to_string(), ..Default::default() }
 }
@@ -30,27 +32,27 @@ fn window_conf() -> Conf {
 pub async fn setup(ecs: &mut EntityComponentSystem) {
     // Load assets.
     ecs.asset_manager_mut()
-        .load_texture("tank", "assets/images/tank-panther-right.png")
+        .load_texture("tank", &format!("{ASSETS}/images/tank-panther-right.png"))
         .await
         .unwrap();
 
     ecs.asset_manager_mut()
-        .load_texture("truck", "assets/images/truck-ford-right.png")
+        .load_texture("truck", &format!("{ASSETS}/images/truck-ford-right.png"))
         .await
         .unwrap();
 
     ecs.asset_manager_mut()
-        .load_texture("jungle", "assets/tilemaps/jungle.png")
+        .load_texture("jungle", &format!("{ASSETS}/tilemaps/jungle.png"))
         .await
         .unwrap();
 
     ecs.asset_manager_mut()
-        .load_texture("chopper", "assets/images/chopper-spritesheet.png")
+        .load_texture("chopper", &format!("{ASSETS}/images/chopper-spritesheet.png"))
         .await
         .unwrap();
 
     ecs.asset_manager_mut()
-        .load_texture("bullet", "assets/images/bullet.png")
+        .load_texture("bullet", &format!("{ASSETS}/images/bullet.png"))
         .await
         .unwrap();
 
@@ -67,7 +69,7 @@ pub async fn setup(ecs: &mut EntityComponentSystem) {
 
     tracing::info!("Added Systems");
 
-    let tiles = load_map("assets/tilemaps/jungle.map").unwrap();
+    let tiles = load_map(&format!("{ASSETS}/tilemaps/jungle.map")).unwrap();
     let tile_scale = 2;
     for tile in tiles {
         let tile_x = (tile.x * 32 * tile_scale) as f32;
