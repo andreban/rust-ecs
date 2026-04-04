@@ -1,6 +1,6 @@
 use std::{
     any::Any,
-    cell::{Ref, RefCell},
+    cell::{RefCell, RefMut},
     collections::{HashMap, HashSet},
     rc::Rc,
 };
@@ -75,12 +75,42 @@ impl EntityManager {
 
     /// Returns a cloned handle to the `TagManager`.
     pub fn tag_manager(&self) -> TagManager {
-        self.inner.borrow().tag_manager.clone()
+        self.inner.borrow().tag_manager()
     }
 
     /// Returns a cloned handle to the `GroupManager`.
     pub fn group_manager(&self) -> GroupManager {
-        self.inner.borrow().group_manager.clone()
+        self.inner.borrow().group_manager().clone()
+    }
+
+    /// Returns owned handles to every component of type `C`.
+    ///
+    /// Each handle is an `Rc<RefCell<Box<C>>>` giving both shared access and
+    /// interior mutability. Returns an empty `Vec` if no entity has that component.
+    pub fn query<C: Component + 'static>(&self) -> Vec<Rc<RefCell<Box<C>>>> {
+        self.inner.borrow().query::<C>()
+    }
+
+    /// Returns owned mutable handles to every component of type `C`.
+    ///
+    /// Equivalent to [`query`] — each `Rc<RefCell<Box<C>>>` handle supports
+    /// interior mutability via `borrow_mut()`.
+    pub fn query_mut<C: Component + 'static>(&self) -> Vec<Rc<RefCell<Box<C>>>> {
+        self.inner.borrow_mut().query_mut::<C>()
+    }
+
+    /// Returns all live entities whose component signature is a superset of
+    /// `signature`.
+    pub fn get_entities_with_signature(&self, signature: &ComponentSignature) -> Vec<Entity> {
+        self.inner.borrow().get_entities_with_signature(signature)
+    }
+
+    /// Returns a `RefMut` guard providing mutable access to the `GroupManager`.
+    ///
+    /// The guard releases the borrow when dropped. Do not hold it across `.await`
+    /// points or while calling other `EntityManager` methods.
+    pub fn group_manager_mut(&self) -> RefMut<'_, GroupManager> {
+        RefMut::map(self.inner.borrow_mut(), |inner| inner.group_manager_mut())
     }
 
     // pub fn create_query<T>(&self) -> Query<T> {
@@ -189,34 +219,27 @@ impl EntityManagerInner {
         }
     }
 
-    /// Returns immutable borrows of every component of type `C`.
+    /// Returns owned handles to every component of type `C`.
     ///
-    /// Returns an empty `Vec` if no entity has a component of that type.
-    pub fn query<C: Component + 'static>(&self) -> Vec<Ref<'_, C>> {
+    /// Each handle is an `Rc<RefCell<Box<C>>>` giving both shared access and
+    /// interior mutability. Returns an empty `Vec` if no entity has that component.
+    pub fn query<C: Component + 'static>(&self) -> Vec<Rc<RefCell<Box<C>>>> {
         let component_type_id = C::get_type_id();
         let Some(components) = self.components.get(&component_type_id) else {
             return vec![];
         };
         components
             .values()
-            .filter_map(|c| (c as &dyn Any).downcast_ref::<RefCell<C>>())
-            .map(|c| c.borrow())
+            .filter_map(|c| c.clone().downcast::<RefCell<Box<C>>>().ok())
             .collect()
     }
 
-    /// Returns `RefCell` references to every component of type `C` for
-    /// interior mutation.
+    /// Returns owned mutable handles to every component of type `C`.
     ///
-    /// Returns an empty `Vec` if no entity has a component of that type.
-    pub fn query_mut<C: Component + 'static>(&mut self) -> Vec<&RefCell<C>> {
-        let component_type_id = C::get_type_id();
-        let Some(components) = self.components.get_mut(&component_type_id) else {
-            return vec![];
-        };
-        components
-            .values()
-            .filter_map(|c| (c as &dyn Any).downcast_ref::<RefCell<C>>())
-            .collect()
+    /// Equivalent to [`query`] — each `Rc<RefCell<Box<C>>>` handle supports
+    /// interior mutability via `borrow_mut()`.
+    pub fn query_mut<C: Component + 'static>(&mut self) -> Vec<Rc<RefCell<Box<C>>>> {
+        self.query::<C>()
     }
 
     /// Returns all live entities whose component signature is a superset of
