@@ -16,7 +16,7 @@
 
 ## High
 
-4. **`src/lib.rs:75-80`** — Systems re-subscribe to the event bus on every frame (after `clear()` wipes listeners). This is wasteful. Subscribe once when a system is added via `add_system()`.
+4. ~~**`src/lib.rs:75-80`** — Systems re-subscribe to the event bus on every frame (after `clear()` wipes listeners). This is wasteful. Subscribe once when a system is added via `add_system()`.~~ — **Fixed.** Moved subscription into `add_system()`; removed `clear()` + re-subscription loop from `update()`.
 
 5. **`src/entity_manager/query.rs:36,104,114`** — `RefCell::borrow()` panics at runtime if a mutable borrow is already held. No protection against double-borrow in system iteration.
 
@@ -28,7 +28,7 @@
 
 7. ~~**`src/entity_manager/em.rs:176-177, 190-191`** — `.iter().map(|(_, c)| ...)` ignores map keys; use `.values()` instead (Clippy flag).~~ — **Fixed** (as part of `query`/`query_mut` refactor).
 
-8. **`src/events.rs:10`** — Unnecessary parentheses in `Box<(dyn System + 'static)>` — should be `Box<dyn System + 'static>`.
+8. ~~**`src/events.rs:10`** — Unnecessary parentheses in `Box<(dyn System + 'static)>` — should be `Box<dyn System + 'static>`.~~ — **Fixed.**
 
 9. **Component/entity ID counters** (`src/entity_manager/component.rs`, `entity.rs`) — Sequential `AtomicUsize` IDs are fine for this use case but there's no safeguard if IDs ever overflow 32 (the `FixedBitSet` is capped at 32 components). No assertion or doc warning when exceeding the limit.
 
@@ -47,5 +47,5 @@
 ## Top priorities to fix
 
 1. ~~Replace `.unwrap()` on component/resource access with `Option` returns — these are the most likely to bite users.~~ — **Done.**
-2. Move event bus subscription out of the update loop into `add_system()`.
+2. ~~Move event bus subscription out of the update loop into `add_system()`.~~ — **Done.**
 3. Add a compile-time or runtime assertion when component count exceeds 32.

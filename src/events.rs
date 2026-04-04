@@ -7,7 +7,7 @@ use std::{
 
 use crate::{systems::System, EntityManager};
 
-type SystemRef = Rc<RefCell<Box<(dyn System + 'static)>>>;
+type SystemRef = Rc<RefCell<Box<dyn System + 'static>>>;
 
 pub struct Event {
     data: Box<dyn Any + 'static>,

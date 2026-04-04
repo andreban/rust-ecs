@@ -43,6 +43,12 @@ impl EntityComponentSystem {
 
     pub fn add_system<T: System + 'static>(&mut self, system: T) {
         let boxed: Rc<RefCell<Box<dyn System>>> = Rc::new(RefCell::new(Box::new(system)));
+        {
+            let mut eb = self.event_bus.borrow_mut();
+            for type_id in boxed.borrow().get_event_type() {
+                eb.subscribe_type(*type_id, boxed.clone());
+            }
+        }
         self.systems.push(boxed);
     }
 
@@ -70,15 +76,6 @@ impl EntityComponentSystem {
 
             em.update();
         }
-        self.event_bus.borrow_mut().clear();
-
-        for system in &self.systems {
-            for type_id in system.borrow().get_event_type() {
-                let mut eb = self.event_bus.borrow_mut();
-                eb.subscribe_type(*type_id, system.clone());
-            }
-        }
-
         for system in &self.systems {
             system.borrow().update(
                 delta_time,
