@@ -285,3 +285,140 @@ impl Default for EntityManager {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::any::Any;
+    use std::collections::HashSet;
+    use std::sync::OnceLock;
+    use super::EntityManagerInner;
+    use crate::{Component, ComponentSignature, get_next_component_type_id};
+
+    struct TestHealth(u32);
+
+    impl Component for TestHealth {
+        fn get_type_id() -> usize {
+            static TYPE_ID: OnceLock<usize> = OnceLock::new();
+            *TYPE_ID.get_or_init(get_next_component_type_id)
+        }
+        fn as_any(&self) -> &dyn Any { self }
+        fn as_any_mut(&mut self) -> &mut dyn Any { self }
+    }
+
+    #[allow(dead_code)]
+    struct TestVelocity(f32, f32);
+
+    impl Component for TestVelocity {
+        fn get_type_id() -> usize {
+            static TYPE_ID: OnceLock<usize> = OnceLock::new();
+            *TYPE_ID.get_or_init(get_next_component_type_id)
+        }
+        fn as_any(&self) -> &dyn Any { self }
+        fn as_any_mut(&mut self) -> &mut dyn Any { self }
+    }
+
+    #[test]
+    fn create_entity_increments_id() {
+        let mut em = EntityManagerInner::new();
+        let e1 = em.create_entity();
+        let e2 = em.create_entity();
+        assert_ne!(e1.id(), e2.id());
+    }
+
+    #[test]
+    fn create_multiple_entities() {
+        let mut em = EntityManagerInner::new();
+        let ids: HashSet<_> = (0..10).map(|_| em.create_entity().id()).collect();
+        assert_eq!(ids.len(), 10);
+    }
+
+    #[test]
+    fn destroy_entity_removes_components() {
+        let mut em = EntityManagerInner::new();
+        let entity = em.create_entity();
+        em.update(); // spawn entity
+        em.add_component(entity, TestHealth(100));
+        assert!(em.get_component::<TestHealth>(&entity).is_some());
+        em.destroy_entity(entity);
+        em.update(); // process despawn
+        assert!(em.get_component::<TestHealth>(&entity).is_none());
+    }
+
+    #[test]
+    fn add_component_then_get() {
+        let mut em = EntityManagerInner::new();
+        let entity = em.create_entity();
+        em.add_component(entity, TestHealth(42));
+        let comp = em.get_component::<TestHealth>(&entity).expect("component should be present");
+        assert_eq!(comp.borrow().0, 42);
+    }
+
+    #[test]
+    fn add_component_updates_signature() {
+        let mut em = EntityManagerInner::new();
+        let entity = em.create_entity();
+        em.add_component(entity, TestHealth(0));
+        let sig = em.get_signature(entity).expect("signature should exist");
+        let mut expected = ComponentSignature::default();
+        expected.require_component::<TestHealth>();
+        assert_eq!(sig, &expected);
+    }
+
+    #[test]
+    fn remove_component_updates_signature() {
+        let mut em = EntityManagerInner::new();
+        let entity = em.create_entity();
+        em.add_component(entity, TestHealth(0));
+        em.remove_component::<TestHealth>(entity);
+        let sig = em.get_signature(entity).expect("signature entry should still exist");
+        assert_eq!(sig, &ComponentSignature::default());
+    }
+
+    #[test]
+    fn get_component_wrong_type_returns_none() {
+        let mut em = EntityManagerInner::new();
+        let entity = em.create_entity();
+        em.add_component(entity, TestHealth(0));
+        assert!(em.get_component::<TestVelocity>(&entity).is_none());
+    }
+
+    #[test]
+    fn update_commits_pending_destroys() {
+        let mut em = EntityManagerInner::new();
+        let entity = em.create_entity();
+        em.update(); // spawn
+        assert!(em.entities.contains_key(&entity.id()));
+        em.destroy_entity(entity);
+        em.update(); // despawn
+        assert!(!em.entities.contains_key(&entity.id()));
+    }
+
+    #[test]
+    fn query_returns_all_matching_components() {
+        let mut em = EntityManagerInner::new();
+        let e1 = em.create_entity();
+        let e2 = em.create_entity();
+        let _e3 = em.create_entity();
+        em.add_component(e1, TestHealth(1));
+        em.add_component(e2, TestHealth(2));
+        let results = em.query::<TestHealth>();
+        assert_eq!(results.len(), 2);
+    }
+
+    #[test]
+    fn get_entities_with_signature_filters_correctly() {
+        let mut em = EntityManagerInner::new();
+        let e1 = em.create_entity();
+        let e2 = em.create_entity();
+        em.add_component(e1, TestHealth(10));
+        em.add_component(e2, TestVelocity(1.0, 2.0));
+        em.update(); // commit spawns so entities appear in live set
+
+        let mut sig = ComponentSignature::default();
+        sig.require_component::<TestHealth>();
+
+        let matches = em.get_entities_with_signature(&sig);
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0], e1);
+    }
+}
