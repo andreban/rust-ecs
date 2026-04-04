@@ -30,15 +30,15 @@
 
 8. ~~**`src/events.rs:10`** — Unnecessary parentheses in `Box<(dyn System + 'static)>` — should be `Box<dyn System + 'static>`.~~ — **Fixed.**
 
-9. **Component/entity ID counters** (`src/entity_manager/component.rs`, `entity.rs`) — Sequential `AtomicUsize` IDs are fine for this use case but there's no safeguard if IDs ever overflow 32 (the `FixedBitSet` is capped at 32 components). No assertion or doc warning when exceeding the limit.
+9. ~~**Component/entity ID counters** (`src/entity_manager/component.rs`, `entity.rs`) — Sequential `AtomicUsize` IDs are fine for this use case but there's no safeguard if IDs ever overflow 32 (the `FixedBitSet` is capped at 32 components). No assertion or doc warning when exceeding the limit.~~ — **Fixed.** Added `MAX_COMPONENTS = 32` constant to `component.rs`; `get_next_component_type_id()` now asserts the returned ID is below the limit with a clear panic message. `component_signature.rs` now imports the constant from `component.rs` instead of defining its own.
 
 ---
 
 ## Low
 
-10. **`macros/src/lib.rs:20`** — `TYPE_ID.get().unwrap()` — the unwrap is safe since `get_or_init` guarantees initialization, but `get_or_init` + direct use is cleaner.
+10. ~~**`macros/src/lib.rs:20`** — `TYPE_ID.get().unwrap()` — the unwrap is safe since `get_or_init` guarantees initialization, but `get_or_init` + direct use is cleaner.~~ — **Fixed.** Collapsed `get_or_init(...)` + `get().unwrap()` into a single `*get_or_init(...)`.
 
-11. **`src/lib.rs:100,112`** — `em.get_signature(*entity).unwrap()` — called on entities in `entities_to_spawn`/`entities_to_despawn` which are managed by the ECS, so this should be safe, but an `expect()` with a diagnostic message would be more informative.
+11. ~~**`src/lib.rs:100,112`** — `em.get_signature(*entity).unwrap()` — called on entities in `entities_to_spawn`/`entities_to_despawn` which are managed by the ECS, so this should be safe, but an `expect()` with a diagnostic message would be more informative.~~ — **Fixed.** Replaced all three `.unwrap()` calls with `.expect("...")` with descriptive messages.
 
 12. **No public API docs** — None of the public types/methods have `///` doc comments.
 
@@ -48,4 +48,4 @@
 
 1. ~~Replace `.unwrap()` on component/resource access with `Option` returns — these are the most likely to bite users.~~ — **Done.**
 2. ~~Move event bus subscription out of the update loop into `add_system()`.~~ — **Done.**
-3. Add a compile-time or runtime assertion when component count exceeds 32.
+3. ~~Add a compile-time or runtime assertion when component count exceeds 32.~~ — **Done.**

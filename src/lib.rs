@@ -17,7 +17,7 @@ use std::{
 
 pub use asset_manager::AssetManager;
 pub use component_signature::ComponentSignature;
-pub use entity_manager::{get_next_component_type_id, Component, Entity, EntityManager};
+pub use entity_manager::{get_next_component_type_id, Component, Entity, EntityManager, MAX_COMPONENTS};
 use events::EventBus;
 pub use resources::Resources;
 use systems::System;
@@ -57,7 +57,7 @@ impl EntityComponentSystem {
             let mut em = self.entity_manager.inner.borrow_mut();
             {
                 for entity in em.entities_to_spawn.iter() {
-                    let entity_signature = em.get_signature(*entity).unwrap();
+                    let entity_signature = em.get_signature(*entity).expect("entity in entities_to_spawn must have a signature");
                     for system in &self.systems {
                         let mut system = system.borrow_mut();
                         if system.signature().is_subset(entity_signature) {
@@ -94,7 +94,7 @@ impl EntityComponentSystem {
     pub fn add_component<C: Component + 'static>(&mut self, entity: Entity, component: C) {
         let mut em = self.entity_manager.inner.borrow_mut();
         em.add_component(entity, component);
-        let signature = em.get_signature(entity).unwrap();
+        let signature = em.get_signature(entity).expect("entity must have a signature after add_component");
 
         for system in &mut self.systems {
             if system.borrow().signature().is_subset(signature) {
@@ -106,7 +106,7 @@ impl EntityComponentSystem {
     pub fn remove_component<C: Component + 'static>(&mut self, entity: Entity) {
         let mut em = self.entity_manager.inner.borrow_mut();
         em.remove_component::<C>(entity);
-        let signature = em.get_signature(entity).unwrap();
+        let signature = em.get_signature(entity).expect("entity must have a signature after remove_component");
         for system in &mut self.systems {
             if !system.borrow().signature().is_subset(signature) {
                 system.borrow_mut().remove_entity(entity);

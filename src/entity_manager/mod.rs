@@ -5,7 +5,7 @@ mod group_manager;
 mod tag_manager;
 // mod query;
 
-pub use component::{get_next_component_type_id, Component, ComponentTypeId};
+pub use component::{get_next_component_type_id, Component, ComponentTypeId, MAX_COMPONENTS};
 pub use entity::{Entity, EntityId};
 pub use tag_manager::TagManager;
 // pub use query::Query;

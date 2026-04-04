@@ -1,8 +1,6 @@
 use fixedbitset::FixedBitSet;
 
-use crate::Component;
-
-const MAX_COMPONENTS: usize = 32;
+use crate::{Component, MAX_COMPONENTS};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
 pub struct ComponentSignature {
