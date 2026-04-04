@@ -2,12 +2,28 @@ use std::{
     any::Any,
     cell::{Ref, RefCell, RefMut},
     collections::HashMap,
+    fmt,
     marker::PhantomData,
 };
 
 use crate::component_signature::ComponentSignature;
 
 use super::{component::Component, EntityId, EntityManager};
+
+#[derive(Debug)]
+pub enum QueryError {
+    ComponentNotFound,
+    TypeMismatch,
+}
+
+impl fmt::Display for QueryError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            QueryError::ComponentNotFound => write!(f, "component not found in storage"),
+            QueryError::TypeMismatch => write!(f, "stored value could not be downcast to requested type"),
+        }
+    }
+}
 
 pub struct Query<'a, T> {
     pub(crate) phantom: PhantomData<T>,
@@ -21,20 +37,20 @@ impl<'a, T> Query<'a, T> {
 }
 
 impl<'a, A: Component + 'static> Query<'a, Ref<'a, A>> {
-    pub fn values(&'a self) -> Vec<Ref<'a, A>> {
-        // Get the component ID.
+    pub fn values(&'a self) -> Result<Vec<Ref<'a, A>>, QueryError> {
         let component_id = &A::get_type_id();
 
-        // Get the components from the list. Return an empty vector if the list is empty.
         let Some(components) = self.em.inner.borrow().components.get(component_id) else {
-            return vec![];
+            return Ok(vec![]);
         };
 
-        // Get the components values, borrow the RefCell and cast to type A.
         components
             .values()
-            .map(|c| Ref::map(c.borrow(), |f| f.downcast_ref::<A>().unwrap()))
-            .collect::<Vec<_>>()
+            .map(|c| {
+                Ref::filter_map(c.borrow(), |f| f.downcast_ref::<A>())
+                    .map_err(|_| QueryError::TypeMismatch)
+            })
+            .collect()
     }
 }
 
@@ -45,15 +61,12 @@ impl<'a, A: Component + 'static> From<&'a EntityManager> for Query<'a, Ref<'a, A
 }
 
 impl<'a, A: Component + 'static, B: Component + 'static> Query<'a, (RefMut<'a, A>, Ref<'a, B>)> {
-    pub fn values(&'a self) -> Vec<(RefMut<'a, A>, Ref<'a, B>)> {
-        // Create a signature for the query, using the IDs for the Component types.
+    pub fn values(&'a self) -> Result<Vec<(RefMut<'a, A>, Ref<'a, B>)>, QueryError> {
         let mut query_signature = ComponentSignature::default();
         query_signature.require_component::<A>();
         query_signature.require_component::<B>();
 
-        // Filter the entities by the query signature, then map to the component pairs.
-        let entities = self
-            .em
+        self.em
             .entities
             .values()
             .filter(|e| {
@@ -64,26 +77,20 @@ impl<'a, A: Component + 'static, B: Component + 'static> Query<'a, (RefMut<'a, A
                 query_signature.is_subset(entity_signature)
             })
             .map(|a| get_component::<A, B>(&self.em.components, a.id()))
-            .collect::<Vec<_>>();
-
-        entities
+            .collect()
     }
 }
 
 impl<'a, A: Component + 'static, B: Component + 'static> Query<'a, (Ref<'a, A>, Ref<'a, B>)> {
-    pub fn values(&'a self) -> Vec<(Ref<'a, A>, Ref<'a, B>)> {
-        // Get the IDs for the Component types.
+    pub fn values(&'a self) -> Result<Vec<(Ref<'a, A>, Ref<'a, B>)>, QueryError> {
         let a_id = A::get_type_id();
         let b_id = B::get_type_id();
 
-        // Create a signature for the query, using the IDs for the Component types.
         let mut query_signature = ComponentSignature::default();
         query_signature.require_component::<A>();
         query_signature.require_component::<B>();
 
-        // Filter the entities by the query signature, then map to the component pairs.
-        let entities = self
-            .em
+        self.em
             .entities
             .values()
             .filter(|e| {
@@ -94,29 +101,27 @@ impl<'a, A: Component + 'static, B: Component + 'static> Query<'a, (Ref<'a, A>, 
                 query_signature.is_subset(entity_signature)
             })
             .map(|entity| {
-                let a = self
+                let a_cell = self
                     .em
                     .components
                     .get(&a_id)
-                    .unwrap()
-                    .get(&entity.id())
-                    .unwrap();
-                let a = Ref::map(a.borrow(), |f| f.downcast_ref::<A>().unwrap());
+                    .and_then(|m| m.get(&entity.id()))
+                    .ok_or(QueryError::ComponentNotFound)?;
+                let a = Ref::filter_map(a_cell.borrow(), |f| f.downcast_ref::<A>())
+                    .map_err(|_| QueryError::TypeMismatch)?;
 
-                // Get component A from the component storage, then typecast to the correct type.
-                let b = self
+                let b_cell = self
                     .em
                     .components
                     .get(&b_id)
-                    .unwrap()
-                    .get(&entity.id())
-                    .unwrap();
-                let b = Ref::map(b.borrow(), |f| f.downcast_ref::<B>().unwrap());
-                (a, b)
-            })
-            .collect::<Vec<_>>();
+                    .and_then(|m| m.get(&entity.id()))
+                    .ok_or(QueryError::ComponentNotFound)?;
+                let b = Ref::filter_map(b_cell.borrow(), |f| f.downcast_ref::<B>())
+                    .map_err(|_| QueryError::TypeMismatch)?;
 
-        entities
+                Ok((a, b))
+            })
+            .collect()
     }
 }
 
@@ -138,20 +143,26 @@ impl<'a, A: Component + 'static, B: Component + 'static> From<&'a EntityManager>
 
 type AnyRefCell = RefCell<Box<dyn Any>>;
 
-// Builds a component pair from the components HashMap.
 fn get_component<A: Component + 'static, B: Component + 'static>(
     components: &HashMap<usize, HashMap<usize, AnyRefCell>>,
     entity_id: EntityId,
-) -> (RefMut<A>, Ref<B>) {
+) -> Result<(RefMut<A>, Ref<B>), QueryError> {
     let a_id = A::get_type_id();
     let b_id = B::get_type_id();
 
-    // Get component A from the component storage, then typecast to the correct type.
-    let a = components.get(&a_id).unwrap().get(&entity_id).unwrap();
-    let a = RefMut::map(a.borrow_mut(), |f| f.downcast_mut::<A>().unwrap());
+    let a_cell = components
+        .get(&a_id)
+        .and_then(|m| m.get(&entity_id))
+        .ok_or(QueryError::ComponentNotFound)?;
+    let a = RefMut::filter_map(a_cell.borrow_mut(), |f| f.downcast_mut::<A>())
+        .map_err(|_| QueryError::TypeMismatch)?;
 
-    // Get component A from the component storage, then typecast to the correct type.
-    let b = components.get(&b_id).unwrap().get(&entity_id).unwrap();
-    let b = Ref::map(b.borrow(), |f| f.downcast_ref::<B>().unwrap());
-    (a, b)
+    let b_cell = components
+        .get(&b_id)
+        .and_then(|m| m.get(&entity_id))
+        .ok_or(QueryError::ComponentNotFound)?;
+    let b = Ref::filter_map(b_cell.borrow(), |f| f.downcast_ref::<B>())
+        .map_err(|_| QueryError::TypeMismatch)?;
+
+    Ok((a, b))
 }

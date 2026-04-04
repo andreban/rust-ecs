@@ -6,7 +6,7 @@
 
 2. ~~**`src/resources.rs:19,25`** — `downcast_ref::<T>().unwrap()` / `downcast_mut::<T>().unwrap()` panic on type mismatch with no user-friendly error.~~ — **Fixed.** Replaced `.map(|r| r.downcast_X().unwrap())` with `.and_then(|r| r.downcast_X())`.
 
-3. **`src/entity_manager/query.rs:36,101-114`** — Multiple `.unwrap()` calls on downcasts and map lookups assume type invariants that aren't enforced.
+3. ~~**`src/entity_manager/query.rs:36,101-114`** — Multiple `.unwrap()` calls on downcasts and map lookups assume type invariants that aren't enforced.~~ — **Fixed.** Added `QueryError` enum; `values()` now returns `Result<Vec<...>, QueryError>`; map lookups use `.and_then(...).ok_or(QueryError::ComponentNotFound)?`; downcasts use `Ref::filter_map`/`RefMut::filter_map` mapped to `QueryError::TypeMismatch`.
 
 4. ~~**Keyboard input not working**~~ — **Fixed.** Root cause was an upstream miniquad bug: `SetWindowLongPtrA` was never called on `aarch64`, so `win32_wndproc` always read a null display pointer and dropped every window message. Bug filed at not-fl3/miniquad; workaround applied via `[patch.crates-io]` pointing to a local patched copy in `../miniquad-patched`.
 
