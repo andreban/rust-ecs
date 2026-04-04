@@ -43,6 +43,18 @@ pub struct TagManagerInner {
 
 impl TagManagerInner {
     pub fn set_tag(&mut self, entity: Entity, tag: &str) {
+        // If another entity already holds this tag, clear its entity_tag entry.
+        if let Some(&old_entity_id) = self.tag_entity.get(tag) {
+            if old_entity_id != entity.id() {
+                self.entity_tag.remove(&old_entity_id);
+            }
+        }
+        // If this entity already has a different tag, remove that tag's reverse mapping.
+        if let Some(old_tag) = self.entity_tag.get(&entity.id()) {
+            if old_tag != tag {
+                self.tag_entity.remove(&old_tag.clone());
+            }
+        }
         self.entity_tag.insert(entity.id(), tag.to_string());
         self.tag_entity.insert(tag.to_string(), entity.id());
     }
@@ -62,5 +74,75 @@ impl TagManagerInner {
 
     pub fn get_entity(&self, tag: &str) -> Option<Entity> {
         self.tag_entity.get(tag).map(|id| Entity::new(*id))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_entity(id: EntityId) -> Entity {
+        Entity::new(id)
+    }
+
+    #[test]
+    fn set_tag_then_has_tag() {
+        let tm = TagManager::default();
+        let entity = make_entity(1);
+        tm.set_tag(entity, "player");
+        assert!(tm.has_tag(entity, "player"));
+    }
+
+    #[test]
+    fn has_tag_wrong_tag_returns_false() {
+        let tm = TagManager::default();
+        let entity = make_entity(1);
+        tm.set_tag(entity, "player");
+        assert!(!tm.has_tag(entity, "enemy"));
+    }
+
+    #[test]
+    fn get_entity_returns_tagged_entity() {
+        let tm = TagManager::default();
+        let entity = make_entity(1);
+        tm.set_tag(entity, "player");
+        assert_eq!(tm.get_entity("player"), Some(entity));
+    }
+
+    #[test]
+    fn get_entity_unknown_tag_returns_none() {
+        let tm = TagManager::default();
+        assert_eq!(tm.get_entity("unknown"), None);
+    }
+
+    #[test]
+    fn remove_tag_clears_lookup() {
+        let tm = TagManager::default();
+        let entity = make_entity(1);
+        tm.set_tag(entity, "player");
+        tm.remove_tag(entity);
+        assert!(!tm.has_tag(entity, "player"));
+        assert_eq!(tm.get_entity("player"), None);
+    }
+
+    #[test]
+    fn set_tag_overwrites_previous_tag() {
+        let tm = TagManager::default();
+        let entity = make_entity(1);
+        tm.set_tag(entity, "player");
+        tm.set_tag(entity, "boss");
+        assert!(!tm.has_tag(entity, "player"));
+        assert!(tm.has_tag(entity, "boss"));
+    }
+
+    #[test]
+    fn set_tag_overwrites_existing_entity_for_tag() {
+        let tm = TagManager::default();
+        let entity1 = make_entity(1);
+        let entity2 = make_entity(2);
+        tm.set_tag(entity1, "player");
+        tm.set_tag(entity2, "player");
+        assert_eq!(tm.get_entity("player"), Some(entity2));
+        assert!(!tm.has_tag(entity1, "player"));
     }
 }
