@@ -12,28 +12,40 @@ use super::{
     TagManager,
 };
 
+/// A cloneable handle to the entity/component storage.
+///
+/// All clones share the same underlying data via `Rc<RefCell<…>>`. The
+/// primary instance lives inside `EntityComponentSystem`; clones are handed
+/// to systems during each update so
+/// they can query and mutate components without borrowing the whole ECS.
 #[derive(Clone)]
 pub struct EntityManager {
     pub(crate) inner: Rc<RefCell<EntityManagerInner>>,
 }
 
 impl EntityManager {
+    /// Creates a new, empty [`EntityManager`].
     pub fn new() -> Self {
         EntityManager { inner: Rc::new(RefCell::new(EntityManagerInner::new())) }
     }
 
+    /// Commits pending spawns and despawns. Called automatically by
+    /// `EntityComponentSystem::update`.
     pub fn update(&self) {
         self.inner.borrow_mut().update();
     }
 
+    /// Creates a new entity and enqueues it for spawning on the next update.
     pub fn create_entity(&self) -> Entity {
         self.inner.borrow_mut().create_entity()
     }
 
+    /// Enqueues an entity for destruction on the next update.
     pub fn destroy_entity(&self, entity: Entity) {
         self.inner.borrow_mut().destroy_entity(entity);
     }
 
+    /// Adds an entity to a named group.
     pub fn add_entity_to_group(&self, entity: &Entity, group: &str) {
         self.inner
             .borrow_mut()
@@ -41,10 +53,13 @@ impl EntityManager {
             .add_entity_to_group(entity, group);
     }
 
+    /// Associates a string tag with an entity (one tag per entity).
     pub fn set_tag(&self, entity: Entity, tag: &str) {
         self.inner.borrow_mut().tag_manager.set_tag(entity, tag);
     }
 
+    /// Returns the component of type `C` attached to `entity`, or `None` if
+    /// the entity does not have that component.
     pub fn get_component<C: Component + 'static>(
         &self,
         entity: &Entity,
@@ -52,14 +67,18 @@ impl EntityManager {
         self.inner.borrow().get_component::<C>(entity)
     }
 
+    /// Attaches a component to an entity. Does not update system membership;
+    /// prefer `EntityComponentSystem::add_component` for that.
     pub fn add_component<C: Component + 'static>(&self, entity: Entity, component: C) {
         self.inner.borrow_mut().add_component(entity, component);
     }
 
+    /// Returns a cloned handle to the `TagManager`.
     pub fn tag_manager(&self) -> TagManager {
         self.inner.borrow().tag_manager.clone()
     }
 
+    /// Returns a cloned handle to the `GroupManager`.
     pub fn group_manager(&self) -> GroupManager {
         self.inner.borrow().group_manager.clone()
     }
@@ -170,6 +189,9 @@ impl EntityManagerInner {
         }
     }
 
+    /// Returns immutable borrows of every component of type `C`.
+    ///
+    /// Returns an empty `Vec` if no entity has a component of that type.
     pub fn query<C: Component + 'static>(&self) -> Vec<Ref<'_, C>> {
         let component_type_id = C::get_type_id();
         let Some(components) = self.components.get(&component_type_id) else {
@@ -182,6 +204,10 @@ impl EntityManagerInner {
             .collect()
     }
 
+    /// Returns `RefCell` references to every component of type `C` for
+    /// interior mutation.
+    ///
+    /// Returns an empty `Vec` if no entity has a component of that type.
     pub fn query_mut<C: Component + 'static>(&mut self) -> Vec<&RefCell<C>> {
         let component_type_id = C::get_type_id();
         let Some(components) = self.components.get_mut(&component_type_id) else {
@@ -193,6 +219,8 @@ impl EntityManagerInner {
             .collect()
     }
 
+    /// Returns all live entities whose component signature is a superset of
+    /// `signature`.
     pub fn get_entities_with_signature(&self, signature: &ComponentSignature) -> Vec<Entity> {
         self.entities
             .values()
@@ -207,18 +235,23 @@ impl EntityManagerInner {
             .collect()
     }
 
+    /// Returns the [`ComponentSignature`] of `entity`, or `None` if the entity
+    /// is unknown.
     pub fn get_signature(&self, entity: Entity) -> Option<&ComponentSignature> {
         self.entity_component_signatures.get(&entity.id())
     }
 
+    /// Returns a cloned handle to the `TagManager`.
     pub fn tag_manager(&self) -> TagManager {
         self.tag_manager.clone()
     }
 
+    /// Returns a shared reference to the `GroupManager`.
     pub fn group_manager(&self) -> &GroupManager {
         &self.group_manager
     }
 
+    /// Returns a mutable reference to the `GroupManager`.
     pub fn group_manager_mut(&mut self) -> &mut GroupManager {
         &mut self.group_manager
     }

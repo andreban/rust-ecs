@@ -6,30 +6,40 @@ use std::{
 
 use super::{Entity, EntityId};
 
+/// Manages many-to-many relationships between entities and named groups.
+///
+/// An entity can belong to multiple groups simultaneously; a group can contain
+/// multiple entities.
 #[derive(Clone, Default)]
 pub struct GroupManager {
     inner: Rc<RefCell<GroupManagerInner>>,
 }
 
 impl GroupManager {
+    /// Adds `entity` to the group identified by `group`.
     pub fn add_entity_to_group(&self, entity: &Entity, group: &str) {
         self.inner.borrow_mut().add_entity_to_group(entity, group);
     }
 
+    /// Removes `entity` from the group identified by `group`.
     pub fn remove_entity_from_group(&self, entity: &Entity, group: &str) {
         self.inner
             .borrow_mut()
             .remove_entity_from_group(entity, group);
     }
 
+    /// Removes `entity` from all groups it belongs to.
     pub fn remove_entity(&self, entity: &Entity) {
         self.inner.borrow_mut().remove_entity(entity);
     }
 
+    /// Returns `true` if `group` contains `entity`.
+    /// Returns `true` if `group` contains `entity`.
     pub fn group_contains_entity(&self, group: &str, entity: &Entity) -> bool {
         self.inner.borrow().group_contains_entity(group, entity)
     }
 
+    /// Returns `true` if `entity` belongs to `group`.
     pub fn entity_in_group(&self, entity: &Entity, group: &str) -> bool {
         self.inner.borrow().entity_in_group(entity, group)
     }

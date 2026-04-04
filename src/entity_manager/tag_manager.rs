@@ -2,24 +2,34 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use super::{Entity, EntityId};
 
+/// Manages a one-to-one mapping between entities and string tags.
+///
+/// Each entity can hold at most one tag. Assigning a new tag replaces the
+/// previous one.
 #[derive(Clone, Default)]
 pub struct TagManager {
     inner: Rc<RefCell<TagManagerInner>>,
 }
 
 impl TagManager {
+    /// Associates `tag` with `entity`. Replaces any existing tag on the entity.
     pub fn set_tag(&self, entity: Entity, tag: &str) {
         self.inner.borrow_mut().set_tag(entity, tag);
     }
 
+    /// Removes the tag from `entity`, if any.
+    /// Removes the tag from `entity`, if any.
     pub fn remove_tag(&self, entity: Entity) {
         self.inner.borrow_mut().remove_tag(entity);
     }
 
+    /// Returns `true` if `entity` is currently tagged with `tag`.
     pub fn has_tag(&self, entity: Entity, tag: &str) -> bool {
         self.inner.borrow().has_tag(entity, tag)
     }
 
+    /// Returns the entity associated with `tag`, or `None` if no entity has
+    /// that tag.
     pub fn get_entity(&self, tag: &str) -> Option<Entity> {
         self.inner.borrow().get_entity(tag)
     }

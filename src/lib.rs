@@ -1,3 +1,25 @@
+//! A minimal Entity-Component-System (ECS) library built on top of macroquad.
+//!
+//! # Overview
+//!
+//! The central entry point is [`EntityComponentSystem`], which owns the entity
+//! manager, all registered systems, the asset manager, the event bus, and the
+//! shared resource store.
+//!
+//! # Quick start
+//!
+//! ```rust,ignore
+//! use rust_ecs::EntityComponentSystem;
+//!
+//! let mut ecs = EntityComponentSystem::new();
+//! let entity = ecs.create_entity();
+//! ecs.add_component(entity, my_component);
+//! ecs.add_system(my_system);
+//!
+//! // inside your game loop:
+//! ecs.update(delta_time);
+//! ```
+
 mod asset_manager;
 mod component_signature;
 mod entity_manager;
@@ -22,6 +44,11 @@ use events::EventBus;
 pub use resources::Resources;
 use systems::System;
 
+/// The top-level ECS container.
+///
+/// Owns all entities, components, systems, assets, events, and resources.
+/// Create one instance per game/application and call [`update`](Self::update)
+/// every frame.
 pub struct EntityComponentSystem {
     entity_manager: EntityManager,
     systems: Vec<Rc<RefCell<Box<dyn System>>>>,
@@ -31,6 +58,7 @@ pub struct EntityComponentSystem {
 }
 
 impl EntityComponentSystem {
+    /// Creates a new, empty [`EntityComponentSystem`].
     pub fn new() -> Self {
         EntityComponentSystem {
             entity_manager: entity_manager::EntityManager::new(),
@@ -41,6 +69,13 @@ impl EntityComponentSystem {
         }
     }
 
+    /// Registers a system with the ECS.
+    ///
+    /// The system is subscribed to any events it declares via
+    /// [`System::get_event_type`] at registration time. Entities that already
+    /// match the system's [`ComponentSignature`] are **not** retroactively
+    /// added; they will be picked up on the next [`update`](Self::update) call
+    /// after they are spawned.
     pub fn add_system<T: System + 'static>(&mut self, system: T) {
         let boxed: Rc<RefCell<Box<dyn System>>> = Rc::new(RefCell::new(Box::new(system)));
         {
@@ -52,6 +87,12 @@ impl EntityComponentSystem {
         self.systems.push(boxed);
     }
 
+    /// Advances the ECS by one frame.
+    ///
+    /// In order, this call:
+    /// 1. Commits pending entity spawns and assigns them to matching systems.
+    /// 2. Removes entities that were queued for destruction.
+    /// 3. Calls [`System::update`] on every registered system.
     pub fn update(&self, delta_time: Duration) {
         {
             let mut em = self.entity_manager.inner.borrow_mut();
@@ -87,10 +128,18 @@ impl EntityComponentSystem {
         }
     }
 
+    /// Creates a new entity and enqueues it for spawning on the next [`update`](Self::update).
+    ///
+    /// Returns the [`Entity`] handle immediately so components can be attached
+    /// before the first update.
     pub fn create_entity(&mut self) -> Entity {
         self.entity_manager.inner.borrow_mut().create_entity()
     }
 
+    /// Attaches a component to an entity and updates all system memberships.
+    ///
+    /// Systems whose [`ComponentSignature`] is now satisfied by the entity's
+    /// updated signature will begin receiving the entity.
     pub fn add_component<C: Component + 'static>(&mut self, entity: Entity, component: C) {
         let mut em = self.entity_manager.inner.borrow_mut();
         em.add_component(entity, component);
@@ -103,6 +152,10 @@ impl EntityComponentSystem {
         }
     }
 
+    /// Detaches a component from an entity and updates all system memberships.
+    ///
+    /// Systems whose [`ComponentSignature`] is no longer satisfied will stop
+    /// receiving the entity.
     pub fn remove_component<C: Component + 'static>(&mut self, entity: Entity) {
         let mut em = self.entity_manager.inner.borrow_mut();
         em.remove_component::<C>(entity);
@@ -114,26 +167,38 @@ impl EntityComponentSystem {
         }
     }
 
+    /// Returns a shared reference to the [`AssetManager`].
     pub fn asset_manager(&self) -> &AssetManager {
         &self.asset_manager
     }
 
+    /// Returns a mutable reference to the [`AssetManager`].
     pub fn asset_manager_mut(&mut self) -> &mut AssetManager {
         &mut self.asset_manager
     }
 
+    /// Borrows the shared [`Resources`] store immutably.
     pub fn resources(&self) -> Ref<'_, Resources> {
         self.resources.borrow()
     }
 
+    /// Borrows the shared [`Resources`] store mutably.
     pub fn resources_mut(&self) -> RefMut<'_, Resources> {
         self.resources.borrow_mut()
     }
 
+    /// Returns a cloned [`Rc`] handle to the shared [`EventBus`].
+    ///
+    /// Use this to emit events from outside the system update loop (e.g. from
+    /// game-setup code or input handlers).
     pub fn event_bus_cloned(&self) -> Rc<RefCell<EventBus>> {
         self.event_bus.clone()
     }
 
+    /// Returns a cloned [`EntityManager`] handle.
+    ///
+    /// The returned handle shares the same underlying data via `Rc`, so
+    /// mutations are reflected everywhere.
     pub fn entity_manager(&self) -> EntityManager {
         self.entity_manager.clone()
     }
