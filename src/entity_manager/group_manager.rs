@@ -99,3 +99,88 @@ impl GroupManagerInner {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_entity(id: EntityId) -> Entity {
+        Entity::new(id)
+    }
+
+    #[test]
+    fn add_entity_to_group_then_contains() {
+        let gm = GroupManager::default();
+        let entity = make_entity(1);
+        gm.add_entity_to_group(&entity, "enemies");
+        assert!(gm.group_contains_entity("enemies", &entity));
+    }
+
+    #[test]
+    fn entity_not_in_group_returns_false() {
+        let gm = GroupManager::default();
+        let entity = make_entity(1);
+        assert!(!gm.group_contains_entity("enemies", &entity));
+    }
+
+    #[test]
+    fn entity_in_group_matches_group_contains_entity() {
+        let gm = GroupManager::default();
+        let entity = make_entity(1);
+        gm.add_entity_to_group(&entity, "allies");
+        assert_eq!(
+            gm.entity_in_group(&entity, "allies"),
+            gm.group_contains_entity("allies", &entity)
+        );
+    }
+
+    #[test]
+    fn remove_entity_from_group() {
+        let gm = GroupManager::default();
+        let entity = make_entity(1);
+        gm.add_entity_to_group(&entity, "enemies");
+        gm.remove_entity_from_group(&entity, "enemies");
+        assert!(!gm.group_contains_entity("enemies", &entity));
+    }
+
+    #[test]
+    fn entity_can_be_in_multiple_groups() {
+        let gm = GroupManager::default();
+        let entity = make_entity(1);
+        gm.add_entity_to_group(&entity, "enemies");
+        gm.add_entity_to_group(&entity, "bosses");
+        assert!(gm.group_contains_entity("enemies", &entity));
+        assert!(gm.group_contains_entity("bosses", &entity));
+    }
+
+    #[test]
+    fn remove_entity_removes_from_all_groups() {
+        let gm = GroupManager::default();
+        let entity = make_entity(1);
+        gm.add_entity_to_group(&entity, "enemies");
+        gm.add_entity_to_group(&entity, "bosses");
+        gm.remove_entity(&entity);
+        assert!(!gm.group_contains_entity("enemies", &entity));
+        assert!(!gm.group_contains_entity("bosses", &entity));
+    }
+
+    #[test]
+    fn empty_group_name_is_valid() {
+        let gm = GroupManager::default();
+        let entity = make_entity(1);
+        gm.add_entity_to_group(&entity, "");
+        assert!(gm.group_contains_entity("", &entity));
+    }
+
+    #[test]
+    fn multiple_entities_in_same_group() {
+        let gm = GroupManager::default();
+        let e1 = make_entity(1);
+        let e2 = make_entity(2);
+        gm.add_entity_to_group(&e1, "enemies");
+        gm.add_entity_to_group(&e2, "enemies");
+        gm.remove_entity(&e1);
+        assert!(!gm.group_contains_entity("enemies", &e1));
+        assert!(gm.group_contains_entity("enemies", &e2));
+    }
+}
