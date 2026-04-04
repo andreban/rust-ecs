@@ -2,9 +2,9 @@
 
 ## Critical — Panics in hot paths
 
-1. **`src/entity_manager/em.rs:157`** — `component.downcast().unwrap()` will panic if the stored component type doesn't match `C`. Similarly at lines 175, 189 where `components.get(...).unwrap()` panics if no component of that type has ever been added.
+1. ~~**`src/entity_manager/em.rs:157`** — `component.downcast().unwrap()` will panic if the stored component type doesn't match `C`. Similarly at lines 175, 189 where `components.get(...).unwrap()` panics if no component of that type has ever been added.~~ — **Fixed.** `downcast().ok()?` in `get_component`; early `return vec![]` in `query`/`query_mut`; inner downcasts use `filter_map`.
 
-2. **`src/resources.rs:19,25`** — `downcast_ref::<T>().unwrap()` / `downcast_mut::<T>().unwrap()` panic on type mismatch with no user-friendly error.
+2. ~~**`src/resources.rs:19,25`** — `downcast_ref::<T>().unwrap()` / `downcast_mut::<T>().unwrap()` panic on type mismatch with no user-friendly error.~~ — **Fixed.** Replaced `.map(|r| r.downcast_X().unwrap())` with `.and_then(|r| r.downcast_X())`.
 
 3. **`src/entity_manager/query.rs:36,101-114`** — Multiple `.unwrap()` calls on downcasts and map lookups assume type invariants that aren't enforced.
 
@@ -26,7 +26,7 @@
 
 ## Medium
 
-7. **`src/entity_manager/em.rs:176-177, 190-191`** — `.iter().map(|(_, c)| ...)` ignores map keys; use `.values()` instead (Clippy flag).
+7. ~~**`src/entity_manager/em.rs:176-177, 190-191`** — `.iter().map(|(_, c)| ...)` ignores map keys; use `.values()` instead (Clippy flag).~~ — **Fixed** (as part of `query`/`query_mut` refactor).
 
 8. **`src/events.rs:10`** — Unnecessary parentheses in `Box<(dyn System + 'static)>` — should be `Box<dyn System + 'static>`.
 
@@ -46,6 +46,6 @@
 
 ## Top priorities to fix
 
-1. Replace `.unwrap()` on component/resource access with `Option` returns — these are the most likely to bite users.
+1. ~~Replace `.unwrap()` on component/resource access with `Option` returns — these are the most likely to bite users.~~ — **Done.**
 2. Move event bus subscription out of the update loop into `add_system()`.
 3. Add a compile-time or runtime assertion when component count exceeds 32.

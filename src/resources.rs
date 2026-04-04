@@ -16,12 +16,12 @@ impl Resources {
     pub fn get<T: Any>(&self) -> Option<&T> {
         self.resources
             .get(&TypeId::of::<T>())
-            .map(|r| r.downcast_ref::<T>().unwrap())
+            .and_then(|r| r.downcast_ref::<T>())
     }
 
     pub fn get_mut<T: Any>(&mut self) -> Option<&mut T> {
         self.resources
             .get_mut(&TypeId::of::<T>())
-            .map(|r| r.downcast_mut::<T>().unwrap())
+            .and_then(|r| r.downcast_mut::<T>())
     }
 }

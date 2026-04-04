@@ -154,7 +154,7 @@ impl EntityManagerInner {
         let entity_id = entity.id();
         let components = self.components.get(&component_type_id)?;
         let component = components.get(&entity_id)?.clone();
-        let component: Rc<RefCell<Box<C>>> = component.downcast().unwrap();
+        let component: Rc<RefCell<Box<C>>> = component.downcast().ok()?;
         Some(component)
     }
 
@@ -172,24 +172,24 @@ impl EntityManagerInner {
 
     pub fn query<C: Component + 'static>(&self) -> Vec<Ref<'_, C>> {
         let component_type_id = C::get_type_id();
-        let components = self.components.get(&component_type_id).unwrap();
+        let Some(components) = self.components.get(&component_type_id) else {
+            return vec![];
+        };
         components
-            .iter()
-            .map(|(_, c)| {
-                (c as &dyn Any)
-                    .downcast_ref::<RefCell<C>>()
-                    .unwrap()
-                    .borrow()
-            })
+            .values()
+            .filter_map(|c| (c as &dyn Any).downcast_ref::<RefCell<C>>())
+            .map(|c| c.borrow())
             .collect()
     }
 
     pub fn query_mut<C: Component + 'static>(&mut self) -> Vec<&RefCell<C>> {
         let component_type_id = C::get_type_id();
-        let components = self.components.get_mut(&component_type_id).unwrap();
+        let Some(components) = self.components.get_mut(&component_type_id) else {
+            return vec![];
+        };
         components
-            .iter()
-            .map(|(_, c)| (c as &dyn Any).downcast_ref::<RefCell<C>>().unwrap())
+            .values()
+            .filter_map(|c| (c as &dyn Any).downcast_ref::<RefCell<C>>())
             .collect()
     }
 
