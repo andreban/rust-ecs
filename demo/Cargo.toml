@@ -10,3 +10,6 @@ rust-ecs = { path = "../"}
 macroquad = "0.4.14"
 tracing = "0.1.41"
 tracing-subscriber = "0.3.20"
+
+[patch.crates-io]
+miniquad = { git = "https://github.com/andreban/miniquad.git", branch = "fix/windows-aarch64-input" }

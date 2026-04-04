@@ -8,7 +8,6 @@ use std::time::SystemTime;
 use std::{
     cell::RefCell,
     rc::Rc,
-    thread,
     time::{Duration, Instant},
 };
 
@@ -233,19 +232,11 @@ fn handle_keyboard_events(entity_manager: EntityManager, event_bus: Rc<RefCell<E
 async fn main() {
     tracing_subscriber::fmt::init();
     let mut ecs = EntityComponentSystem::new();
-    let rate = 1000 / 60;
 
     setup(&mut ecs).await;
 
     let mut time = Instant::now();
     loop {
-        if time.elapsed().as_millis() < rate {
-            thread::sleep(Duration::from_millis(
-                (rate - time.elapsed().as_millis()) as u64,
-            ));
-            continue;
-        }
-
         handle_keyboard_events(ecs.entity_manager(), ecs.event_bus_cloned());
 
         clear_background(BLACK);
