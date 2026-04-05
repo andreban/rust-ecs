@@ -15,7 +15,7 @@ The architecture is heavily inspired by the [C++ Game Engine Programming][2] cou
 - Type-safe component access via `Rc<RefCell<…>>`
 - Pub/sub event bus for inter-system communication
 - Shared resources accessible by all systems
-- Asset manager for loading and caching textures
+- Asset manager for storing and retrieving named assets (renderer-agnostic)
 - Tag and group managers for entity lookup
 
 ## Concepts
@@ -231,11 +231,15 @@ ecs.entity_manager().set_tag(player, "player");
 
 ### 4. Load Assets
 
+The `AssetManager` is renderer-agnostic — load assets with whatever library your application uses, then store them by name. Assets are keyed by both name and type, so different asset types can share the same name without conflict.
+
 ```rust
-ecs.asset_manager_mut()
-    .load_texture("player", "assets/player.png")
-    .await
-    .unwrap();
+// Load with your renderer of choice, then insert:
+let texture = my_renderer::load_texture("assets/player.png").await.unwrap();
+ecs.asset_manager_mut().insert("player", texture);
+
+// Inside a system, retrieve by name and type:
+let texture = asset_manager.get_asset::<MyTexture>("player").unwrap();
 ```
 
 ### 5. Run the Game Loop

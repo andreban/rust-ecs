@@ -67,7 +67,7 @@ impl System for RenderSystem {
         for (transform, sprite) in entities {
             let transform = transform.borrow();
             let sprite = sprite.borrow();
-            let texture = asset_manager.get_texture(&sprite.sprite_name).unwrap();
+            let texture = asset_manager.get_asset::<macroquad::texture::Texture2D>(&sprite.sprite_name).unwrap();
             draw_texture_ex(
                 texture,
                 transform.0.x - camera.0.x,

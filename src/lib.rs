@@ -1,4 +1,4 @@
-//! A minimal Entity-Component-System (ECS) library built on top of macroquad.
+//! A minimal Entity-Component-System (ECS) library.
 //!
 //! # Overview
 //!

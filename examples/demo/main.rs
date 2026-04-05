@@ -31,30 +31,12 @@ fn window_conf() -> Conf {
 
 pub async fn setup(ecs: &mut EntityComponentSystem) {
     // Load assets.
-    ecs.asset_manager_mut()
-        .load_texture("tank", &format!("{ASSETS}/images/tank-panther-right.png"))
-        .await
-        .unwrap();
-
-    ecs.asset_manager_mut()
-        .load_texture("truck", &format!("{ASSETS}/images/truck-ford-right.png"))
-        .await
-        .unwrap();
-
-    ecs.asset_manager_mut()
-        .load_texture("jungle", &format!("{ASSETS}/tilemaps/jungle.png"))
-        .await
-        .unwrap();
-
-    ecs.asset_manager_mut()
-        .load_texture("chopper", &format!("{ASSETS}/images/chopper-spritesheet.png"))
-        .await
-        .unwrap();
-
-    ecs.asset_manager_mut()
-        .load_texture("bullet", &format!("{ASSETS}/images/bullet.png"))
-        .await
-        .unwrap();
+    let am = ecs.asset_manager_mut();
+    am.insert("tank", macroquad::texture::load_texture(&format!("{ASSETS}/images/tank-panther-right.png")).await.unwrap());
+    am.insert("truck", macroquad::texture::load_texture(&format!("{ASSETS}/images/truck-ford-right.png")).await.unwrap());
+    am.insert("jungle", macroquad::texture::load_texture(&format!("{ASSETS}/tilemaps/jungle.png")).await.unwrap());
+    am.insert("chopper", macroquad::texture::load_texture(&format!("{ASSETS}/images/chopper-spritesheet.png")).await.unwrap());
+    am.insert("bullet", macroquad::texture::load_texture(&format!("{ASSETS}/images/bullet.png")).await.unwrap());
 
     // Combining Component queries with system functions, we can add systems like this:
     ecs.add_system(systems::RenderSystem::default());
