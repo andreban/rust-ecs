@@ -39,7 +39,7 @@ use std::{
 
 pub use asset_manager::AssetManager;
 pub use component_signature::ComponentSignature;
-pub use entity_manager::{get_next_component_type_id, Component, Entity, EntityManager, MAX_COMPONENTS};
+pub use entity_manager::{get_next_component_type_id, Component, ComponentRegistry, Entity, EntityManager, MAX_COMPONENTS};
 use events::EventBus;
 pub use resources::Resources;
 use systems::System;
