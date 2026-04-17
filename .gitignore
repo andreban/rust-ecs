@@ -1,5 +1,6 @@
 /target
 .vscode
+.claude
 demo/target
 demo/assets
 .DS_Store
